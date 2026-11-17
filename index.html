@@ -1,0 +1,1615 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vistoria QSMS · Construtora Axial</title>
+<meta name="description" content="Vistoria simplificada de obras — DDS, visitas e ocorrências de SST da Construtora Axial">
+<meta name="theme-color" content="#155F8F">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+:root{
+  --azul:#1B7BB8; --azul-claro:#4BA3D3; --azul-escuro:#155F8F; --navy:#12324F;
+  --azul-bg:#e8f2fa;
+  --texto:#1f2a33; --suave:#5c6873; --borda:#d8dee4; --fundo:#f1f4f7; --card:#fff;
+  --verde:#2e9e5b; --verde-bg:#e6f5ec;
+  --vermelho:#cf3b3b; --vermelho-bg:#fdeaea;
+  --amarelo:#b98200; --amarelo-bg:#fdf5e1;
+  --raio:14px;
+  --sombra:0 1px 2px rgba(16,40,60,.06),0 4px 14px rgba(16,40,60,.07);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--fundo);color:var(--texto);
+  font-size:16px;line-height:1.45;-webkit-tap-highlight-color:transparent;min-height:100vh}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{line-height:1.2;margin:0}
+a{color:var(--azul-escuro)}
+.ico{width:22px;height:22px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+[hidden]{display:none!important}
+
+/* --------- estrutura */
+.topo{position:sticky;top:0;z-index:20;background:var(--azul-escuro);color:#fff;
+  padding:calc(10px + env(safe-area-inset-top)) 16px 10px;display:flex;align-items:center;gap:10px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.topo .titulo{flex:1;min-width:0}
+.topo .titulo b{display:block;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topo .titulo small{opacity:.8;font-size:13px}
+.topo button{background:rgba(255,255,255,.14);border:0;color:#fff;border-radius:10px;padding:8px 10px;display:inline-flex;gap:6px;align-items:center;cursor:pointer;font-size:14px}
+.topo button:hover{background:rgba(255,255,255,.24)}
+.pagina{max-width:720px;margin:0 auto;padding:16px 16px 48px}
+.pagina.larga{max-width:1180px}
+.demo{background:var(--amarelo-bg);color:#6b4b00;font-size:13px;padding:8px 16px;text-align:center;border-bottom:1px solid #f0dca6}
+
+/* --------- botões */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:12px;padding:12px 18px;
+  background:var(--azul);color:#fff;font-weight:600;cursor:pointer;text-decoration:none;min-height:48px}
+.btn:hover{background:var(--azul-escuro)}
+.btn:disabled{opacity:.6;cursor:wait}
+.btn.sec{background:#fff;color:var(--azul-escuro);border:1.5px solid var(--borda)}
+.btn.sec:hover{border-color:var(--azul-claro);background:var(--azul-bg)}
+.btn.perigo{background:var(--vermelho)}
+.btn.verde{background:var(--verde)}
+.btn.bloco{width:100%}
+.btn.peq{min-height:38px;padding:8px 12px;font-size:14px;border-radius:10px}
+.link{background:none;border:0;color:var(--azul-escuro);text-decoration:underline;cursor:pointer;padding:4px}
+.linha-btns{display:flex;gap:10px;flex-wrap:wrap}
+.linha-btns>.btn{flex:1 1 auto}
+
+/* --------- tela inicial */
+.inicio{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 16px;
+  background:linear-gradient(180deg,#fff 0%,#eef5fb 60%,#dfeaf4 100%)}
+.inicio img.logo{width:min(320px,80vw);height:auto;mix-blend-mode:multiply}
+.inicio h1{font-size:26px;color:var(--navy);margin-top:16px;text-align:center}
+.inicio p.sub{color:var(--suave);margin:6px 0 28px;text-align:center}
+.escolha{display:grid;gap:14px;width:100%;max-width:420px}
+.escolha button{display:flex;align-items:center;gap:16px;text-align:left;border:0;border-radius:18px;padding:20px;cursor:pointer;
+  background:#fff;box-shadow:var(--sombra);border:2px solid transparent;transition:border-color .15s,transform .1s}
+.escolha button:hover{border-color:var(--azul-claro)}
+.escolha button:active{transform:scale(.99)}
+.escolha .bolha{width:56px;height:56px;border-radius:16px;display:grid;place-items:center;flex:none}
+.escolha .bolha .ico{width:30px;height:30px}
+.escolha b{display:block;font-size:19px;color:var(--navy)}
+.escolha small{color:var(--suave);font-size:14px}
+.versao{color:var(--suave);font-size:12px;margin-top:28px;text-align:center}
+
+/* --------- cartões e formulários */
+.card{background:var(--card);border-radius:var(--raio);box-shadow:var(--sombra);padding:18px;margin-bottom:14px}
+.card h2{font-size:18px;color:var(--navy);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.card h3{font-size:15px;color:var(--navy);margin:0 0 8px}
+.campo{margin-bottom:14px}
+.campo:last-child{margin-bottom:0}
+.campo>label,.rotulo{display:block;font-weight:600;font-size:14px;margin-bottom:6px;color:#34414c}
+.campo .dica{font-size:13px;color:var(--suave);margin-top:4px}
+.req::after{content:" *";color:var(--vermelho)}
+input[type=text],input[type=number],input[type=password],input[type=search],select,textarea{
+  width:100%;border:1.5px solid var(--borda);border-radius:10px;padding:11px 12px;background:#fff;min-height:46px;font-size:16px}
+textarea{min-height:84px;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--azul);box-shadow:0 0 0 3px rgba(27,123,184,.15)}
+.erro-campo{border-color:var(--vermelho)!important;background:#fffafa}
+.duas{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:520px){.duas{grid-template-columns:1fr}}
+
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{position:relative}
+.chip input{position:absolute;opacity:0;pointer-events:none}
+.chip span{display:inline-block;padding:9px 13px;border-radius:999px;border:1.5px solid var(--borda);background:#fff;cursor:pointer;font-size:14px;user-select:none}
+.chip input:checked+span{background:var(--azul);border-color:var(--azul);color:#fff}
+.chip input:focus-visible+span{box-shadow:0 0 0 3px rgba(27,123,184,.25)}
+
+.opcoes-grandes{display:grid;gap:10px}
+.opcao{position:relative;display:block}
+.opcao input{position:absolute;opacity:0;pointer-events:none}
+.opcao .caixa{display:flex;gap:12px;align-items:flex-start;border:2px solid var(--borda);border-radius:12px;padding:12px 14px;background:#fff;cursor:pointer}
+.opcao .caixa::before{content:"";width:20px;height:20px;border-radius:50%;border:2px solid #9aa7b3;flex:none;margin-top:2px}
+.opcao input:checked+.caixa{border-color:var(--cor,var(--azul));background:var(--cor-bg,var(--azul-bg))}
+.opcao input:checked+.caixa::before{border-color:var(--cor,var(--azul));background:radial-gradient(var(--cor,var(--azul)) 45%,transparent 50%)}
+.opcao b{display:block}
+.opcao small{color:var(--suave)}
+
+/* checklist C / NC / NA */
+.chk{border:1.5px solid var(--borda);border-radius:12px;padding:12px;margin-bottom:10px;background:#fff}
+.chk[data-s="C"]{border-color:#9fd4b3;background:#f6fcf8}
+.chk[data-s="NC"]{border-color:#f0a8a8;background:#fff8f8}
+.chk[data-s="NA"]{border-color:#cfd6dc;background:#fafbfc}
+.chk-top{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px}
+.chk-top p{margin:0;font-size:15px}
+.tag{font-size:11px;font-weight:700;padding:3px 7px;border-radius:6px;background:var(--azul-bg);color:var(--azul-escuro);flex:none;margin-top:2px}
+.tag.EPC{background:#efe9fb;color:#5b3fa0}
+.tag.Geral{background:#eef0f2;color:#4a5560}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.seg button{border:1.5px solid var(--borda);background:#fff;border-radius:10px;min-height:44px;font-weight:700;cursor:pointer}
+.seg button small{display:block;font-weight:500;font-size:11px;color:var(--suave)}
+.seg button.on[data-v="C"]{background:var(--verde);border-color:var(--verde);color:#fff}
+.seg button.on[data-v="NC"]{background:var(--vermelho);border-color:var(--vermelho);color:#fff}
+.seg button.on[data-v="NA"]{background:#7d8a96;border-color:#7d8a96;color:#fff}
+.seg button.on small{color:inherit;opacity:.9}
+.nc-box{margin-top:12px;padding-top:12px;border-top:1px dashed #f0a8a8}
+.desvio{border:1.5px dashed #f0a8a8;border-radius:12px;padding:12px;margin-bottom:10px;background:#fffafa}
+
+/* fotos */
+.fotos{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:10px}
+.foto{position:relative;background:#fff;border:1px solid var(--borda);border-radius:10px;overflow:hidden}
+.foto img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;background:#e9eef2;cursor:zoom-in}
+.foto input{border:0;border-top:1px solid var(--borda);border-radius:0;min-height:38px;font-size:13px;padding:8px}
+.foto .tirar{position:absolute;top:6px;right:6px;width:30px;height:30px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;cursor:pointer;display:grid;place-items:center}
+.foto .tirar .ico{width:16px;height:16px}
+.foto figcaption{font-size:13px;padding:6px 8px;color:var(--suave)}
+.botoes-foto{display:flex;gap:10px}
+.botoes-foto label{flex:1}
+
+.gps{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--verde);margin-top:6px}
+.gps.aviso{color:var(--amarelo)}
+.alerta{border-radius:12px;padding:12px 14px;margin-bottom:14px;display:flex;gap:10px;align-items:flex-start;font-size:14px}
+.alerta .ico{margin-top:1px}
+.alerta.vermelho{background:var(--vermelho-bg);color:#8a1f1f;border:1px solid #f3c2c2}
+.alerta.amarelo{background:var(--amarelo-bg);color:#6b4b00;border:1px solid #f0dca6}
+.alerta.azul{background:var(--azul-bg);color:var(--azul-escuro);border:1px solid #c7def0}
+
+/* --------- técnico: início */
+.ola{margin:6px 0 16px}
+.ola h1{font-size:22px;color:var(--navy)}
+.ola p{margin:4px 0 0;color:var(--suave)}
+.acoes{display:grid;gap:14px}
+.acao{display:flex;gap:16px;align-items:center;border:0;border-radius:18px;padding:20px;background:#fff;box-shadow:var(--sombra);cursor:pointer;text-align:left;border-left:6px solid var(--cor)}
+.acao:active{transform:scale(.99)}
+.acao .bolha{width:58px;height:58px;border-radius:16px;display:grid;place-items:center;background:var(--cor-bg);color:var(--cor);flex:none}
+.acao .bolha .ico{width:30px;height:30px}
+.acao b{display:block;font-size:19px;color:var(--navy)}
+.acao small{color:var(--suave);font-size:14px}
+.enviados{margin-top:22px}
+.enviados h3{font-size:14px;color:var(--suave);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px}
+.enviado{display:flex;gap:10px;align-items:center;background:#fff;border-radius:12px;padding:10px 14px;margin-bottom:8px;font-size:14px}
+.enviado .ico{color:var(--verde);width:18px;height:18px}
+
+.sucesso{text-align:center;padding:40px 16px}
+.sucesso .bolha{width:88px;height:88px;border-radius:50%;background:var(--verde-bg);color:var(--verde);display:grid;place-items:center;margin:0 auto 18px}
+.sucesso .bolha .ico{width:48px;height:48px}
+.sucesso h1{color:var(--navy);font-size:24px}
+.sucesso p{color:var(--suave)}
+.sucesso .numero{font-size:40px;font-weight:800;color:var(--azul-escuro);margin:12px 0}
+
+/* --------- admin */
+.abas{display:flex;gap:6px;overflow-x:auto;margin:0 0 16px;padding-bottom:2px}
+.abas button{border:0;background:#fff;border-radius:10px;padding:10px 16px;font-weight:600;color:var(--suave);cursor:pointer;white-space:nowrap;box-shadow:var(--sombra)}
+.abas button.on{background:var(--azul-escuro);color:#fff}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:#fff;border-radius:var(--raio);box-shadow:var(--sombra);padding:14px 16px}
+.kpi small{display:block;color:var(--suave);font-size:13px}
+.kpi b{font-size:28px;color:var(--navy)}
+.kpi.vermelho b{color:var(--vermelho)}
+.filtros{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:10px;margin-bottom:10px}
+@media (max-width:820px){.filtros{grid-template-columns:1fr 1fr}}
+.filtros-tipo{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+.lista-reg{display:grid;gap:10px}
+.reg{display:flex;gap:14px;align-items:center;background:#fff;border-radius:12px;padding:12px 14px;box-shadow:var(--sombra);cursor:pointer;border-left:5px solid var(--cor);text-align:left;border-top:0;border-right:0;border-bottom:0;width:100%}
+.reg:hover{background:#fbfdff}
+.reg .bolha{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:var(--cor-bg);color:var(--cor);flex:none}
+.reg .meio{flex:1;min-width:0}
+.reg .meio b{display:block;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.reg .meio small{color:var(--suave);font-size:13px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.reg .lado{text-align:right;font-size:13px;color:var(--suave);flex:none}
+.selo{display:inline-block;font-size:12px;font-weight:700;padding:3px 8px;border-radius:999px;white-space:nowrap}
+.selo.novo{background:var(--azul);color:#fff}
+.selo.em_analise{background:var(--amarelo-bg);color:#6b4b00}
+.selo.concluido{background:var(--verde-bg);color:#1d6b3d}
+.selo.vermelho{background:var(--vermelho-bg);color:#8a1f1f}
+.selo.cinza{background:#eef0f2;color:#4a5560}
+.vazio{text-align:center;color:var(--suave);padding:30px}
+
+.det-cab{display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:14px}
+.det-cab h1{font-size:22px;color:var(--navy);flex:1;min-width:220px}
+.grade-dados{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px 18px}
+.dado small{display:block;color:var(--suave);font-size:12px;text-transform:uppercase;letter-spacing:.03em}
+.dado div{white-space:pre-wrap}
+.tabela{width:100%;border-collapse:collapse;font-size:14px}
+.tabela th,.tabela td{border:1px solid var(--borda);padding:8px;text-align:left;vertical-align:top}
+.tabela th{background:#f4f7fa;font-size:13px}
+.st{font-weight:800;text-align:center!important;width:52px}
+.st.C{color:var(--verde)} .st.NC{color:var(--vermelho);background:#fff6f6} .st.NA{color:#7d8a96}
+.lado-a-lado{display:grid;grid-template-columns:2fr 1fr;gap:14px;align-items:start}
+@media (max-width:900px){.lado-a-lado{grid-template-columns:1fr}}
+.historico{font-size:13px;color:var(--suave);margin:0;padding-left:18px}
+.usuario{display:flex;gap:12px;align-items:center;background:#fff;border-radius:12px;padding:12px 14px;box-shadow:var(--sombra);margin-bottom:10px;cursor:pointer;width:100%;border:0;text-align:left}
+.avatar{width:42px;height:42px;border-radius:50%;background:var(--azul-bg);color:var(--azul-escuro);display:grid;place-items:center;font-weight:800;flex:none}
+.item-lista{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.item-lista input[type=text]{flex:1}
+.item-lista select{width:100px;flex:none}
+.item-lista .liga{display:flex;align-items:center;gap:4px;font-size:13px;color:var(--suave);flex:none}
+.item-lista.inativo input[type=text]{color:#9aa7b3;text-decoration:line-through}
+
+/* modal, toast, lightbox */
+.fundo-modal{position:fixed;inset:0;background:rgba(10,25,40,.5);z-index:50;display:flex;align-items:flex-end;justify-content:center}
+@media (min-width:640px){.fundo-modal{align-items:center}}
+.modal{background:#fff;width:100%;max-width:520px;border-radius:18px 18px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));max-height:92vh;overflow:auto}
+@media (min-width:640px){.modal{border-radius:18px}}
+.modal h2{font-size:19px;color:var(--navy);margin-bottom:14px}
+.lightbox{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:60;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:16px}
+.lightbox img{max-width:100%;max-height:84vh;object-fit:contain}
+.lightbox p{color:#fff;margin-top:10px}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:70;display:grid;gap:8px;width:min(92vw,460px)}
+.t{background:#1f2a33;color:#fff;border-radius:12px;padding:12px 16px;box-shadow:0 6px 24px rgba(0,0,0,.25);font-size:15px;display:flex;gap:10px;align-items:center}
+.t.erro{background:#8a1f1f}
+.t.ok{background:#1d6b3d}
+.t button{margin-left:auto;background:#fff;color:#1f2a33;border:0;border-radius:8px;padding:6px 10px;font-weight:700;cursor:pointer}
+.carregando{display:grid;place-items:center;min-height:60vh;color:var(--suave)}
+.giro{width:34px;height:34px;border:4px solid #cfe1ef;border-top-color:var(--azul);border-radius:50%;animation:giro 1s linear infinite;margin:0 auto 10px}
+@keyframes giro{to{transform:rotate(360deg)}}
+
+/* --------- impressão (PDF) */
+.so-impressao{display:none}
+@media print{
+  @page{size:A4;margin:12mm}
+  body{background:#fff;font-size:11pt}
+  .topo,.demo,.nao-imprimir,.abas,#toast{display:none!important}
+  .so-impressao{display:block}
+  .pagina{max-width:none;padding:0}
+  .card{box-shadow:none;border:1px solid #c9d2da;break-inside:avoid;padding:10px 12px;margin-bottom:8px;border-radius:6px}
+  .lado-a-lado{display:block}
+  .fotos{grid-template-columns:1fr 1fr}
+  .foto{break-inside:avoid}
+  .foto img{aspect-ratio:auto;max-height:80mm;object-fit:contain}
+  .tabela th,.tabela td{padding:4px 6px}
+  .cab-impressao{display:flex;align-items:center;gap:14px;border-bottom:3px solid var(--azul);padding-bottom:8px;margin-bottom:10px}
+  .cab-impressao img{height:46px}
+  .cab-impressao b{font-size:14pt;color:var(--navy)}
+  .assinaturas{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:40px}
+  .assinaturas div{border-top:1px solid #333;padding-top:4px;font-size:10pt;text-align:center}
+}
+</style>
+</head>
+<body>
+<div id="app"><div class="carregando"><div><div class="giro"></div>Carregando…</div></div></div>
+<div id="toast"></div>
+<div id="camada"></div>
+
+<script>
+// ============================================================
+//  VISTORIA QSMS — Construtora Axial
+//  Ao publicar mudança: suba APP_VERSION aqui E a VERSION no sw.js
+//  (o GitHub confere — workflow "Conferir versão").
+// ============================================================
+const APP_VERSION = 'v1.0.0';
+const SUPABASE_URL = 'COLE_AQUI_A_URL_DO_SUPABASE';        // ex.: https://abcd1234.supabase.co
+const SUPABASE_KEY = 'COLE_AQUI_A_PUBLISHABLE_KEY';         // sb_publishable_...  (NUNCA a sb_secret_)
+const DOMINIO_USUARIO = 'vistoria-qsms.app';               // igual ao da Edge Function
+const FUSO = 'America/Sao_Paulo';
+
+// Sem Supabase configurado → MODO DEMONSTRAÇÃO (dados só neste aparelho).
+const DEMO = /COLE_AQUI/.test(SUPABASE_URL + SUPABASE_KEY);
+
+// ------------------------------------------------------------ ícones
+const IC = {
+  dds:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  visita:'<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/>',
+  ocorrencia:'<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+  capacete:'<path d="M2 18a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v2z"/><path d="M10 10V5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5"/><path d="M4 15v-3a6 6 0 0 1 6-6"/><path d="M14 6a6 6 0 0 1 6 6v3"/>',
+  escudo:'<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/>',
+  pino:'<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
+  camera:'<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>',
+  imagem:'<rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.09-3.09a2 2 0 0 0-2.82 0L6 21"/>',
+  sair:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/>',
+  voltar:'<path d="m15 18-6-6 6-6"/>',
+  imprimir:'<polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/>',
+  x:'<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  ok:'<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',
+  baixar:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>',
+  mais:'<path d="M5 12h14"/><path d="M12 5v14"/>',
+  atualizar:'<path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/>',
+  lapis:'<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+  lixo:'<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+};
+const ico = (n, cls = '') => `<svg class="ico ${cls}" viewBox="0 0 24 24" aria-hidden="true">${IC[n] || ''}</svg>`;
+
+// ------------------------------------------------------------ vocabulário
+const TIPOS = {
+  dds:        { nome: 'DDS', longo: 'Diálogo Diário de Segurança', cor: '#1B7BB8', bg: '#e8f2fa' },
+  visita:     { nome: 'Visita na Obra', longo: 'Inspeção de campo — SST', cor: '#2e9e5b', bg: '#e6f5ec' },
+  ocorrencia: { nome: 'Incidente / Acidente', longo: 'Comunicação de ocorrência', cor: '#cf3b3b', bg: '#fdeaea' },
+};
+// Classificação baseada na NBR 14280 + pirâmide de Bird (quase-acidente).
+const CLASSIF = {
+  quase:     { nome: 'Quase-acidente / Incidente', desc: 'Não houve lesão nem dano — mas poderia ter havido.', cor: '#b98200', bg: '#fdf5e1', lesao: false },
+  sem_lesao: { nome: 'Acidente sem lesão', desc: 'Só dano material (equipamento, veículo, estrutura, rede).', cor: '#b98200', bg: '#fdf5e1', lesao: false },
+  lesao_sem: { nome: 'Acidente com lesão — SEM afastamento', desc: 'O trabalhador volta ao serviço no mesmo dia ou no dia seguinte.', cor: '#cf3b3b', bg: '#fdeaea', lesao: true },
+  lesao_com: { nome: 'Acidente com lesão — COM afastamento', desc: 'O trabalhador NÃO tem condições de voltar no dia seguinte.', cor: '#cf3b3b', bg: '#fdeaea', lesao: true },
+  fatal:     { nome: 'Acidente fatal', desc: 'Óbito.', cor: '#7a1010', bg: '#f8dcdc', lesao: true },
+};
+const TIPO_ACID = {
+  tipico:  'Típico — durante o trabalho',
+  trajeto: 'De trajeto — entre casa e trabalho',
+  doenca:  'Doença ocupacional',
+};
+const MOMENTO = {
+  agora: 'Agora há pouco (até 1 hora)',
+  hoje:  'Hoje, mais cedo',
+  ontem: 'Ontem',
+  antes: 'Há mais de um dia (explicar na descrição)',
+};
+const PARTES = ['Cabeça','Olhos','Face','Pescoço','Ombro / braço','Mão / dedos','Tronco / costas','Perna / joelho','Pé / tornozelo','Várias partes'];
+const NATUREZA = ['Corte / laceração','Contusão / pancada','Fratura','Entorse / torção','Queimadura','Choque elétrico','Corpo estranho no olho','Intoxicação','Outra'];
+const ATENDIMENTO = ['Primeiros socorros no local','Levado à UPA / hospital','SAMU / Bombeiros acionados','Não precisou de atendimento'];
+const PRAZOS = ['Imediato','Até 24 horas','Até 7 dias','Até 15 dias','Até 30 dias'];
+const STATUS = { novo: 'Novo', em_analise: 'Em análise', concluido: 'Concluído' };
+const ST_LEGENDA = { C: 'Conforme', NC: 'Não conforme', NA: 'Não se aplica' };
+
+// ------------------------------------------------------------ utilidades
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const novoId = () => (crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now() + '-' + Math.random().toString(16).slice(2));
+function paraLogin(u) { u = String(u || '').trim().toLowerCase(); return u.includes('@') ? u : `${u}@${DOMINIO_USUARIO}`; }
+function loginCurto(e) { return String(e || '').replace('@' + DOMINIO_USUARIO, ''); }
+function iniciais(n) { return String(n || '?').trim().split(/\s+/).filter((p) => /^\p{L}/u.test(p)).slice(0, 2).map((p) => p[0]).join('').toUpperCase() || '?'; }
+
+function toast(msg, ms = 3800, tipo = '', botao = null) {
+  const t = document.createElement('div');
+  t.className = 't ' + tipo;
+  t.innerHTML = `<span>${esc(msg)}</span>`;
+  if (botao) {
+    const b = document.createElement('button');
+    b.textContent = botao.texto; b.onclick = () => { t.remove(); botao.acao(); };
+    t.appendChild(b);
+  }
+  $('#toast').appendChild(t);
+  if (ms) setTimeout(() => t.remove(), ms);
+}
+
+// Data/hora — SÓ usado nas telas do administrador.
+function fmtDataHora(iso) {
+  return new Date(iso).toLocaleString('pt-BR', { timeZone: FUSO, day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+function fmtData(iso) { return new Date(iso).toLocaleDateString('pt-BR', { timeZone: FUSO }); }
+function fmtHora(iso) { return new Date(iso).toLocaleTimeString('pt-BR', { timeZone: FUSO, hour: '2-digit', minute: '2-digit' }); }
+// Prazo da CAT (Lei 8.213/91, art. 22): até o 1º dia útil seguinte; óbito = imediato.
+function prazoCAT(iso) {
+  const [d, m, a] = fmtData(iso).split('/').map(Number);
+  const dt = new Date(Date.UTC(a, m - 1, d, 12));
+  do { dt.setUTCDate(dt.getUTCDate() + 1); } while ([0, 6].includes(dt.getUTCDay()));
+  return dt.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+}
+
+async function comprimirImagem(file, max = DEMO ? 1000 : 1600, qualidade = DEMO ? 0.6 : 0.72) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((ok, falha) => {
+      const i = new Image();
+      i.onload = () => ok(i);
+      i.onerror = () => falha(new Error('Não consegui abrir esta imagem. Tente tirar a foto pelo botão "Tirar foto".'));
+      i.src = url;
+    });
+    let w = img.naturalWidth, h = img.naturalHeight;
+    const k = Math.min(1, max / Math.max(w, h));
+    w = Math.round(w * k); h = Math.round(h * k);
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    c.getContext('2d').drawImage(img, 0, 0, w, h);
+    return await new Promise((ok) => c.toBlob(ok, 'image/jpeg', qualidade));
+  } finally { URL.revokeObjectURL(url); }
+}
+const blobParaDataURL = (b) => new Promise((ok) => { const r = new FileReader(); r.onload = () => ok(r.result); r.readAsDataURL(b); });
+
+// ============================================================
+//  CAMADA DE DADOS — Supabase (produção) ou Demo (localStorage)
+// ============================================================
+function traduzErro(e) {
+  const m = String(e?.message || e || '');
+  if (/invalid login credentials/i.test(m)) return 'Usuário ou senha incorretos.';
+  if (/banned|user is banned/i.test(m)) return 'Este acesso está bloqueado. Fale com a engenheira.';
+  if (/failed to fetch|networkerror|load failed/i.test(m)) return 'Sem conexão com a internet. Confira o sinal e tente de novo.';
+  if (/jwt|session/i.test(m)) return 'Sua sessão expirou. Entre novamente.';
+  return m || 'Erro inesperado.';
+}
+
+const SB = {
+  db: null,
+  iniciar() { this.db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); },
+  async perfilAtual() {
+    const { data: { session } } = await this.db.auth.getSession();
+    if (!session) return null;
+    const { data, error } = await this.db.from('perfis').select('*').eq('id', session.user.id).maybeSingle();
+    if (error) throw error;
+    return data;
+  },
+  async entrar(login, senha) {
+    const { error } = await this.db.auth.signInWithPassword({ email: paraLogin(login), password: senha });
+    if (error) throw error;
+    return this.perfilAtual();
+  },
+  async sair() { await this.db.auth.signOut(); },
+  async esqueciSenha(email) {
+    const { error } = await this.db.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+    if (error) throw error;
+  },
+  async novaSenha(senha) { const { error } = await this.db.auth.updateUser({ password: senha }); if (error) throw error; },
+  async listas() {
+    const [o, c] = await Promise.all([
+      this.db.from('opcoes').select('*').order('ordem').order('nome'),
+      this.db.from('checklist_itens').select('*').order('ordem'),
+    ]);
+    if (o.error) throw o.error;
+    if (c.error) throw c.error;
+    return { opcoes: o.data, checklist: c.data };
+  },
+  async enviarFoto(blob, uid) {
+    const path = `${uid}/${novoId()}.jpg`;
+    const { error } = await this.db.storage.from('fotos').upload(path, blob, { contentType: 'image/jpeg', upsert: false });
+    if (error) throw error;
+    return path;
+  },
+  async registrar(p) {
+    const { data, error } = await this.db.rpc('registrar', { p });
+    if (error) throw error;
+    return data;
+  },
+  // ---- admin
+  async registros() {
+    const { data, error } = await this.db.from('registros').select('*').order('criado_em', { ascending: false }).limit(2000);
+    if (error) throw error;
+    return data;
+  },
+  async atualizarRegistro(id, campos) {
+    const { data, error } = await this.db.from('registros').update(campos).eq('id', id).select().single();
+    if (error) throw error;
+    return data;
+  },
+  async urlsFotos(paths) {
+    if (!paths.length) return {};
+    const { data, error } = await this.db.storage.from('fotos').createSignedUrls(paths, 3600);
+    if (error) throw error;
+    const m = {};
+    data.forEach((d) => { if (d.signedUrl) m[d.path] = d.signedUrl; });
+    return m;
+  },
+  async auditoria(registroId) {
+    const { data, error } = await this.db.from('auditoria').select('*').eq('registro_id', registroId).order('quando', { ascending: false });
+    if (error) throw error;
+    return data;
+  },
+  async usuarios() {
+    const { data, error } = await this.db.from('perfis').select('*').order('nome');
+    if (error) throw error;
+    return data;
+  },
+  async gerenciar(corpo) {
+    const { data, error } = await this.db.functions.invoke('gerenciar-usuario', { body: corpo });
+    if (error) throw error;
+    if (!data?.ok) throw new Error(data?.erro || 'Falha.');
+    return data;
+  },
+  async salvarLinha(tabela, linha) {
+    const q = linha.id
+      ? this.db.from(tabela).update(linha).eq('id', linha.id)
+      : this.db.from(tabela).insert(linha);
+    const { error } = await q;
+    if (error) throw error;
+  },
+};
+
+// ---------- Demo: mesmo contrato, tudo no localStorage deste aparelho.
+const Demo = {
+  K: 'vq_demo_v1', d: null,
+  iniciar() {
+    try { this.d = JSON.parse(localStorage.getItem(this.K)); } catch { this.d = null; }
+    if (!this.d) { this.d = this.semente(); this.gravar(); }
+  },
+  gravar() { try { localStorage.setItem(this.K, JSON.stringify(this.d)); } catch { toast('O espaço do modo demonstração acabou. Apague os dados do demo em "Usuários".', 6000, 'erro'); } },
+  semente() {
+    const chk = [
+      ['Uso obrigatório de Capacete, Botina de Segurança e Óculos','EPI'],
+      ['Protetor Auditivo em áreas de ruído intenso (>85 dB)','EPI'],
+      ['Uso de Cinto de Segurança tipo Paraquedista para Trabalho em Altura','EPI'],
+      ['Luvas adequadas para a atividade (Raspa, Nitrílica, Vaqueta)','EPI'],
+      ['Guarda-corpo, Rodapé e Proteção de Periferia em pavimentos','EPC'],
+      ['Telas de Proteção, Tapumes e Sinalização de Segurança','EPC'],
+      ['Aterramento Elétrico, Quadros Protegidos e Fiação Elevada','EPC'],
+      ['Extintores de Incêndio desobstruídos e com validade em dia','EPC'],
+      ['Organização, Limpeza e Desobstrução das Vias de Passagem','Geral'],
+    ].map(([descricao, tipo], i) => ({ id: novoId(), descricao, tipo, ordem: i + 1, ativo: true }));
+    const op = (tipo, nomes) => nomes.map((nome, i) => ({ id: novoId(), tipo, nome, ordem: i + 1, ativo: true }));
+    const opcoes = [
+      ...op('tema_dds', ['Uso correto de EPI','Trabalho em altura (NR-35)','Escavações e valas','Sinalização e isolamento de área','Riscos elétricos (NR-10)','Máquinas e equipamentos (NR-12)','Ordem e limpeza no canteiro','Calor, hidratação e protetor solar','Trânsito e operação próxima a vias','Ergonomia e levantamento de cargas','Prevenção de incêndio','Comunicação de incidentes e quase-acidentes']),
+      ...op('servico', ['Escavação','Repavimentação / asfalto','Assentamento de rede (água/esgoto)','Concretagem','Alvenaria','Armação / forma','Instalações elétricas','Demolição','Trabalho em altura','Içamento de cargas','Calçada / meio-fio']),
+      ...op('obra', ['Repavimentação Iguá — Lote 1','Obra Centro — Rua Principal']),
+    ];
+    const adm = { id: novoId(), nome: 'Engenheira (demo)', email: 'admin@' + DOMINIO_USUARIO, senha: 'demo1234', papel: 'admin', funcao: 'Engenheira de Segurança do Trabalho', registro: '', ativo: true };
+    const t1 = { id: novoId(), nome: 'Técnico 1 (demo)', email: 'tecnico1@' + DOMINIO_USUARIO, senha: 'demo1234', papel: 'tecnico', funcao: 'Técnico de Segurança do Trabalho', registro: '', ativo: true };
+    const t2 = { id: novoId(), nome: 'Técnico 2 (demo)', email: 'tecnico2@' + DOMINIO_USUARIO, senha: 'demo1234', papel: 'tecnico', funcao: 'Técnico de Segurança do Trabalho', registro: '', ativo: true };
+    const h = (horas) => new Date(Date.now() - horas * 3600e3).toISOString();
+    const reg = (n, tipo, autor, horas, extra) => ({
+      id: novoId(), numero: n, tipo, autor_id: autor.id, autor_nome: autor.nome, latitude: null, longitude: null, precisao_m: null,
+      fotos: [], status: 'novo', parecer: '', excluido_em: null, criado_em: h(horas), atualizado_em: h(horas), ...extra,
+    });
+    const checklist = chk.map((c, i) => ({ descricao: c.descricao, tipo: c.tipo, status: i === 2 ? 'NC' : (i === 1 ? 'NA' : 'C'),
+      ...(i === 2 ? { desvio: 'Trabalhador na laje sem cinto paraquedista ancorado.', acao: 'Paralisar atividade e instalar linha de vida.', responsavel: 'Encarregado da frente', prazo: 'Imediato' } : {}) }));
+    return {
+      seq: 3,
+      usuarios: [adm, t1, t2],
+      opcoes, checklist: chk,
+      registros: [
+        reg(3, 'ocorrencia', t2, 1.5, { obra: 'Repavimentação Iguá — Lote 1', endereco: 'Rua das Acácias, 120 – Centro', dados: {
+          classificacao: 'lesao_sem', tipo_acidente: 'tipico', momento: 'agora', acidentado: { nome: 'José da Silva', funcao: 'Servente', vinculo: 'Axial (próprio)' },
+          partes_corpo: ['Mão / dedos'], natureza: 'Corte / laceração', atendimento: 'Primeiros socorros no local',
+          descricao: 'Ao manusear chapa metálica sem luva, o servente cortou o dedo indicador.', causa: 'Não uso de luva de vaqueta.',
+          acoes_imediatas: 'Curativo no local; atividade paralisada até entrega de luvas.', testemunhas: 'Encarregado Paulo', dano_material: '' } }),
+        reg(2, 'visita', t1, 26, { obra: 'Obra Centro — Rua Principal', endereco: 'Rua Principal, 455 – Centro', dados: {
+          empresa: 'Construtora Axial', servicos: ['Concretagem', 'Trabalho em altura'], trabalhadores: '8', encarregado: 'Paulo Souza',
+          checklist, desvios: [], observacoes: 'Frente organizada, exceto pelo trabalho em altura.' } }),
+        reg(1, 'dds', t1, 30, { obra: 'Obra Centro — Rua Principal', endereco: 'Rua Principal, 455 – Centro', dados: {
+          tema: 'Trabalho em altura (NR-35)', participantes: '12', observacoes: 'Equipe participativa. Reforçado uso do cinto.' } }),
+      ],
+      auditoria: [],
+      sessao: null,
+    };
+  },
+  _perfil(u) { if (!u) return null; const { senha, ...p } = u; return p; },
+  async perfilAtual() { return this._perfil(this.d.usuarios.find((u) => u.id === this.d.sessao && u.ativo)); },
+  async entrar(login, senha) {
+    const u = this.d.usuarios.find((x) => x.email === paraLogin(login));
+    if (!u || u.senha !== senha) throw new Error('Invalid login credentials');
+    if (!u.ativo) throw new Error('User is banned');
+    this.d.sessao = u.id; this.gravar();
+    return this._perfil(u);
+  },
+  async sair() { this.d.sessao = null; this.gravar(); },
+  async esqueciSenha() { throw new Error('No modo demonstração não há envio de e-mail.'); },
+  async novaSenha() {},
+  async listas() { return { opcoes: this.d.opcoes.slice().sort((a, b) => a.ordem - b.ordem), checklist: this.d.checklist.slice().sort((a, b) => a.ordem - b.ordem) }; },
+  async enviarFoto(blob, uid) {
+    const path = `${uid}/${novoId()}.jpg`;
+    try { localStorage.setItem('vq_demo_foto_' + path, await blobParaDataURL(blob)); }
+    catch { throw new Error('Sem espaço para fotos no modo demonstração.'); }
+    return path;
+  },
+  async registrar(p) {
+    const eu = this.d.usuarios.find((u) => u.id === this.d.sessao);
+    if (!eu) throw new Error('Acesso não autorizado.');
+    const agora = new Date().toISOString();   // no Supabase quem define isto é o servidor
+    const r = { id: novoId(), numero: ++this.d.seq, tipo: p.tipo, autor_id: eu.id, autor_nome: eu.nome, obra: p.obra, endereco: p.endereco,
+      latitude: p.latitude, longitude: p.longitude, precisao_m: p.precisao_m, dados: p.dados, fotos: p.fotos,
+      status: 'novo', parecer: '', excluido_em: null, criado_em: agora, atualizado_em: agora };
+    this.d.registros.unshift(r); this.gravar();
+    return { numero: r.numero };
+  },
+  async registros() { return this.d.registros.slice().sort((a, b) => b.criado_em.localeCompare(a.criado_em)); },
+  async atualizarRegistro(id, campos) {
+    const r = this.d.registros.find((x) => x.id === id);
+    const antes = JSON.parse(JSON.stringify(r));
+    Object.assign(r, campos, { atualizado_em: new Date().toISOString() });
+    const eu = this.d.usuarios.find((u) => u.id === this.d.sessao);
+    const soStatus = Object.keys(campos).every((k) => k === 'status');
+    let acao = 'editou';
+    if ('excluido_em' in campos) acao = campos.excluido_em ? 'enviou para a lixeira' : 'restaurou';
+    else if (soStatus) acao = `status: ${antes.status} → ${campos.status}`;
+    this.d.auditoria.unshift({ id: novoId(), quando: new Date().toISOString(), usuario_nome: eu?.nome, acao, tabela: 'registros', registro_id: id, antes: acao === 'editou' ? antes : null });
+    this.gravar();
+    return r;
+  },
+  async urlsFotos(paths) { const m = {}; paths.forEach((p) => { const u = localStorage.getItem('vq_demo_foto_' + p); if (u) m[p] = u; }); return m; },
+  async auditoria(registroId) { return this.d.auditoria.filter((a) => a.registro_id === registroId); },
+  async usuarios() { return this.d.usuarios.map((u) => this._perfil(u)).sort((a, b) => a.nome.localeCompare(b.nome)); },
+  async gerenciar(c) {
+    const u = this.d.usuarios.find((x) => x.id === c.id);
+    if (c.acao === 'criar') {
+      const email = paraLogin(c.login);
+      if (!c.nome) throw new Error('Informe o nome.');
+      if (String(c.senha || '').length < 8) throw new Error('A senha precisa ter pelo menos 8 caracteres.');
+      if (this.d.usuarios.some((x) => x.email === email)) throw new Error('Já existe um usuário com este login.');
+      this.d.usuarios.push({ id: novoId(), nome: c.nome, email, senha: c.senha, papel: c.papel === 'admin' ? 'admin' : 'tecnico', funcao: c.funcao || '', registro: c.registro || '', ativo: true });
+    } else if (!u) throw new Error('Usuário não encontrado.');
+    else if (c.acao === 'editar') Object.assign(u, { nome: c.nome, papel: c.papel, funcao: c.funcao, registro: c.registro });
+    else if (c.acao === 'senha') { if (String(c.senha || '').length < 8) throw new Error('A senha precisa ter pelo menos 8 caracteres.'); u.senha = c.senha; }
+    else if (c.acao === 'bloquear') { if (u.id === this.d.sessao) throw new Error('Você não pode bloquear a si mesma.'); u.ativo = false; }
+    else if (c.acao === 'reativar') u.ativo = true;
+    this.gravar();
+    return { ok: true };
+  },
+  async salvarLinha(tabela, linha) {
+    const lista = tabela === 'opcoes' ? this.d.opcoes : this.d.checklist;
+    if (linha.id) Object.assign(lista.find((x) => x.id === linha.id), linha);
+    else lista.push({ id: novoId(), ativo: true, ...linha });
+    this.gravar();
+  },
+  apagarTudo() { Object.keys(localStorage).filter((k) => k.startsWith('vq_demo')).forEach((k) => localStorage.removeItem(k)); location.reload(); },
+};
+
+const api = DEMO ? Demo : SB;
+
+// ============================================================
+//  ESTADO E NAVEGAÇÃO
+// ============================================================
+const S = {
+  perfil: null,
+  listas: { opcoes: [], checklist: [] },
+  form: null,          // formulário aberto: {tipo, fotos:[], geo, editId, sujo}
+  admin: { aba: 'registros', registros: [], filtros: { tipo: '', tecnico: '', periodo: '30', status: '', busca: '', lixeira: false }, usuarios: [] },
+};
+const app = () => $('#app');
+const opcoesDe = (tipo, soAtivas = true) => S.listas.opcoes.filter((o) => o.tipo === tipo && (!soAtivas || o.ativo));
+
+// Navegação com o botão "voltar" do celular.
+let pilha = [];
+function ir(tela, params = {}, substituir = false) {
+  if (S.form?.sujo && !substituir && !confirm('Sair sem enviar? O que foi preenchido será perdido.')) return;
+  if (!tela.startsWith('form')) S.form = null;
+  const estado = { tela, params };
+  if (substituir) { history.replaceState(estado, ''); pilha[pilha.length - 1] = estado; }
+  else { history.pushState(estado, ''); pilha.push(estado); }
+  desenhar(estado);
+}
+window.addEventListener('popstate', (e) => {
+  if (S.form?.sujo) {
+    if (!confirm('Sair sem enviar? O que foi preenchido será perdido.')) { history.pushState(pilha[pilha.length - 1], ''); return; }
+  }
+  pilha.pop();
+  const estado = e.state || { tela: telaInicial(), params: {} };
+  if (!estado.tela.startsWith('form')) S.form = null;
+  desenhar(estado);
+});
+function voltar() { history.back(); }
+function telaInicial() { return !S.perfil ? 'inicio' : (S.perfil.papel === 'admin' ? 'admin' : 'tecnico'); }
+
+function desenhar({ tela, params }) {
+  const telas = { inicio: telaInicio, login: telaLogin, tecnico: telaTecnico, form: telaForm, sucesso: telaSucesso, admin: telaAdmin, registro: telaRegistro, editar: telaEditar };
+  // proteção de navegação (o banco também confere tudo)
+  if (!S.perfil && !['inicio', 'login'].includes(tela)) tela = 'inicio';
+  if (S.perfil && ['inicio', 'login'].includes(tela)) tela = telaInicial();
+  if (['admin', 'registro', 'editar'].includes(tela) && S.perfil?.papel !== 'admin') tela = 'tecnico';
+  window.scrollTo(0, 0);
+  (telas[tela] || telaInicio)(params);
+}
+const faixaDemo = () => DEMO ? `<div class="demo nao-imprimir">Modo demonstração — os dados ficam só neste aparelho. Logins: <b>admin</b>, <b>tecnico1</b>, <b>tecnico2</b> · senha <b>demo1234</b></div>` : '';
+
+function topo({ titulo, sub = '', voltarBtn = false, extra = '' }) {
+  return `${faixaDemo()}<header class="topo">
+    ${voltarBtn ? `<button onclick="voltar()" aria-label="Voltar">${ico('voltar')}</button>` : ''}
+    <div class="titulo"><b>${esc(titulo)}</b>${sub ? `<small>${esc(sub)}</small>` : ''}</div>
+    ${extra}
+    <button onclick="sair()" aria-label="Sair">${ico('sair')}<span>Sair</span></button>
+  </header>`;
+}
+
+// ============================================================
+//  TELA INICIAL E LOGIN
+// ============================================================
+function telaInicio() {
+  app().innerHTML = `${faixaDemo()}<div class="inicio">
+    <img class="logo" src="logo.png" alt="Construtora Axial">
+    <h1>Vistoria QSMS</h1>
+    <p class="sub">Saúde e Segurança do Trabalho nas obras</p>
+    <div class="escolha">
+      <button onclick="ir('login',{modo:'tecnico'})">
+        <span class="bolha" style="background:#e8f2fa;color:#1B7BB8">${ico('capacete')}</span>
+        <span><b>Usuário</b><small>Técnico de segurança — registrar DDS, visitas e ocorrências</small></span>
+      </button>
+      <button onclick="ir('login',{modo:'admin'})">
+        <span class="bolha" style="background:#12324F;color:#fff">${ico('escudo')}</span>
+        <span><b>Administrador</b><small>Engenharia de segurança — painel, relatórios e usuários</small></span>
+      </button>
+    </div>
+    <p class="versao">Construtora Axial · ${APP_VERSION}</p>
+  </div>`;
+}
+
+function telaLogin({ modo = 'tecnico' }) {
+  const adm = modo === 'admin';
+  app().innerHTML = `${faixaDemo()}<div class="inicio">
+    <img class="logo" src="logo.png" alt="Construtora Axial" style="width:min(220px,60vw)">
+    <form class="card" style="width:100%;max-width:420px;margin-top:14px" onsubmit="fazerLogin(event,'${modo}')">
+      <h2>${ico(adm ? 'escudo' : 'capacete')} Entrar como ${adm ? 'Administrador' : 'Usuário'}</h2>
+      <div class="campo"><label for="l-login">${adm ? 'E-mail ou usuário' : 'Usuário'}</label>
+        <input type="text" id="l-login" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="${adm ? 'seu e-mail' : 'ex.: joao.silva'}" required></div>
+      <div class="campo"><label for="l-senha">Senha</label>
+        <input type="password" id="l-senha" autocomplete="current-password" required></div>
+      <div class="campo"><label style="font-weight:400;display:flex;gap:8px;align-items:center"><input type="checkbox" onchange="$('#l-senha').type=this.checked?'text':'password'"> Mostrar senha</label></div>
+      <p id="l-erro" class="alerta vermelho" hidden></p>
+      <button class="btn bloco" id="l-btn">Entrar</button>
+      <p style="text-align:center;margin:14px 0 0;font-size:14px;color:var(--suave)">
+        ${adm ? `<button type="button" class="link" onclick="esqueciSenha()">Esqueci minha senha</button>` : 'Esqueceu a senha? Fale com a engenheira de segurança.'}
+      </p>
+    </form>
+    <button class="link" onclick="voltar()">← Voltar</button>
+  </div>`;
+  setTimeout(() => $('#l-login')?.focus(), 50);
+}
+
+async function fazerLogin(ev, modo) {
+  ev.preventDefault();
+  const btn = $('#l-btn'), erro = $('#l-erro');
+  btn.disabled = true; btn.textContent = 'Entrando…'; erro.hidden = true;
+  try {
+    const perfil = await api.entrar($('#l-login').value, $('#l-senha').value);
+    if (!perfil || !perfil.ativo) { await api.sair(); throw new Error('Este acesso está bloqueado. Fale com a engenheira.'); }
+    if (modo === 'admin' && perfil.papel !== 'admin') {
+      await api.sair();
+      throw new Error('Este usuário não tem acesso de administrador. Volte e entre como "Usuário".');
+    }
+    S.perfil = perfil;
+    await carregarListas();
+    const destino = { tela: modo === 'admin' ? 'admin' : 'tecnico', params: {} };
+    history.replaceState(destino, '');
+    pilha = [destino];
+    desenhar(destino);
+  } catch (e) {
+    erro.textContent = traduzErro(e); erro.hidden = false;
+    btn.disabled = false; btn.textContent = 'Entrar';
+  }
+}
+
+async function esqueciSenha() {
+  const email = ($('#l-login').value || '').trim();
+  if (!email.includes('@')) { toast('Digite o seu e-mail no campo acima e toque de novo em "Esqueci minha senha".', 6000); return; }
+  try { await api.esqueciSenha(email); toast('Se o e-mail estiver cadastrado, chegará um link para criar nova senha.', 7000, 'ok'); }
+  catch (e) { toast(traduzErro(e), 6000, 'erro'); }
+}
+
+async function sair() {
+  if (S.form?.sujo && !confirm('Sair sem enviar? O que foi preenchido será perdido.')) return;
+  S.form = null;
+  await api.sair().catch(() => {});
+  S.perfil = null;
+  pilha = [];
+  history.replaceState({ tela: 'inicio', params: {} }, '');
+  desenhar({ tela: 'inicio', params: {} });
+}
+
+async function carregarListas() {
+  try { S.listas = await api.listas(); }
+  catch (e) { toast('Não consegui carregar as listas: ' + traduzErro(e), 6000, 'erro'); }
+}
+
+// ============================================================
+//  TÉCNICO — início
+// ============================================================
+const chaveEnviados = () => 'vq_enviados_' + (S.perfil?.id || '');
+function enviadosLocais() { try { return JSON.parse(localStorage.getItem(chaveEnviados())) || []; } catch { return []; } }
+function guardarEnviado(item) {
+  try { localStorage.setItem(chaveEnviados(), JSON.stringify([item, ...enviadosLocais()].slice(0, 15))); } catch { /* sem espaço: tudo bem */ }
+}
+
+function telaTecnico() {
+  const nome = (S.perfil.nome || '').split(/\s+/)[0];
+  const env = enviadosLocais();
+  const ehAdmin = S.perfil.papel === 'admin';
+  app().innerHTML = `${topo({ titulo: 'Vistoria QSMS', sub: S.perfil.nome, extra: ehAdmin ? `<button onclick="ir('admin')">${ico('escudo')}<span>Painel</span></button>` : '' })}
+  <main class="pagina">
+    <div class="ola"><h1>Olá, ${esc(nome)}!</h1><p>O que você vai registrar agora?</p></div>
+    <div class="acoes">
+      ${['dds', 'visita', 'ocorrencia'].map((t) => `
+        <button class="acao" style="--cor:${TIPOS[t].cor};--cor-bg:${TIPOS[t].bg}" onclick="abrirForm('${t}')">
+          <span class="bolha">${ico(t)}</span>
+          <span><b>${TIPOS[t].nome}</b><small>${{
+            dds: 'Foto do diálogo da manhã, assunto e observações',
+            visita: 'Endereço, serviço e checklist de EPI / EPC',
+            ocorrencia: 'Relatar quase-acidente ou acidente de trabalho',
+          }[t]}</small></span>
+        </button>`).join('')}
+    </div>
+    ${env.length ? `<section class="enviados"><h3>Enviados por este aparelho</h3>
+      ${env.map((e) => `<div class="enviado">${ico('ok')}<span><b>${esc(TIPOS[e.tipo]?.nome || e.tipo)} nº ${esc(e.numero)}</b> · ${esc(e.obra)}</span></div>`).join('')}
+    </section>` : ''}
+    <p class="versao">${APP_VERSION}</p>
+  </main>`;
+}
+
+// ============================================================
+//  FORMULÁRIOS (técnico preenche; admin reaproveita para editar)
+// ============================================================
+function abrirForm(tipo) {
+  S.form = { tipo, fotos: [], geo: null, editId: null, sujo: false };
+  ir('form', { tipo });
+}
+
+function telaForm({ tipo }) {
+  if (!S.form || S.form.tipo !== tipo) S.form = { tipo, fotos: [], geo: null, editId: null, sujo: false };
+  const T = TIPOS[tipo];
+  app().innerHTML = `${topo({ titulo: T.nome, sub: T.longo, voltarBtn: true })}
+  <main class="pagina">
+    <form id="form" novalidate onsubmit="enviarForm(event)" oninput="S.form.sujo=true" onchange="S.form.sujo=true">
+      ${corpoForm(tipo, {})}
+      <div class="alerta azul">${ico('escudo')}<span>A data e a hora do registro são gravadas automaticamente no envio e vão direto para a engenheira de segurança.</span></div>
+      <button class="btn bloco" id="btn-enviar" style="min-height:54px;font-size:17px">${ico('ok')} Enviar registro</button>
+    </form>
+  </main>`;
+  depoisDeDesenharForm(tipo, {});
+}
+
+// r = registro existente (edição do admin) ou {} (novo)
+function corpoForm(tipo, r) {
+  const d = r.dados || {};
+  const local = `
+    <section class="card"><h2>${ico('pino')} Local</h2>
+      <div class="campo"><label for="f-obra" class="req">Obra / local</label>
+        <input type="text" id="f-obra" name="obra" list="dl-obras" value="${esc(r.obra)}" placeholder="Nome da obra ou frente de serviço" autocomplete="off">
+        <datalist id="dl-obras">${opcoesDe('obra').map((o) => `<option value="${esc(o.nome)}">`).join('')}</datalist></div>
+      <div class="campo"><label for="f-endereco" class="${tipo === 'dds' ? '' : 'req'}">Endereço</label>
+        <textarea id="f-endereco" name="endereco" rows="2" placeholder="Rua, número, bairro, cidade">${esc(r.endereco)}</textarea>
+        <button type="button" class="btn sec peq" style="margin-top:8px" onclick="usarLocalizacao()">${ico('pino')} Usar minha localização</button>
+        <div id="gps-info"></div></div>
+    </section>`;
+  if (tipo === 'dds') return local + `
+    <section class="card"><h2>${ico('dds')} Diálogo Diário de Segurança</h2>
+      <div class="campo"><span class="rotulo req">Foto do DDS</span>${blocoFotos()}<p class="dica">Tire uma foto da equipe reunida. Pode adicionar mais de uma.</p></div>
+      <div class="campo"><label for="f-tema" class="req">Assunto abordado</label>
+        <select id="f-tema" name="tema" onchange="$('#f-tema-outro-c').hidden=this.value!=='__outro'">
+          <option value="">Escolha o assunto…</option>
+          ${opcoesDe('tema_dds').map((o) => `<option ${d.tema === o.nome ? 'selected' : ''}>${esc(o.nome)}</option>`).join('')}
+          <option value="__outro" ${d.tema && !opcoesDe('tema_dds').some((o) => o.nome === d.tema) ? 'selected' : ''}>Outro assunto…</option>
+        </select>
+        <div class="campo" id="f-tema-outro-c" style="margin-top:8px" hidden><input type="text" name="tema_outro" placeholder="Qual foi o assunto?" value="${esc(d.tema && !opcoesDe('tema_dds').some((o) => o.nome === d.tema) ? d.tema : '')}"></div></div>
+      <div class="campo"><label for="f-part">Nº de participantes</label>
+        <input type="number" id="f-part" name="participantes" inputmode="numeric" min="0" value="${esc(d.participantes)}" style="max-width:160px"></div>
+      <div class="campo"><label for="f-obs">Observações</label>
+        <textarea id="f-obs" name="observacoes" placeholder="Dúvidas da equipe, pontos de atenção, sugestões…">${esc(d.observacoes)}</textarea></div>
+    </section>`;
+
+  if (tipo === 'visita') {
+    const servicos = opcoesDe('servico').map((o) => o.nome);
+    const marcados = d.servicos || [];
+    const outrosServ = marcados.filter((s) => !servicos.includes(s));
+    const itens = r.id ? (d.checklist || []) : S.listas.checklist.filter((c) => c.ativo).map((c) => ({ descricao: c.descricao, tipo: c.tipo }));
+    return local + `
+    <section class="card"><h2>${ico('visita')} Serviço</h2>
+      <div class="duas">
+        <div class="campo"><label for="f-emp">Empresa / setor</label><input type="text" id="f-emp" name="empresa" value="${esc(d.empresa)}" placeholder="Axial ou terceirizada"></div>
+        <div class="campo"><label for="f-enc">Encarregado / responsável no local</label><input type="text" id="f-enc" name="encarregado" value="${esc(d.encarregado)}"></div>
+      </div>
+      <div class="campo"><span class="rotulo req">Qual o serviço?</span>
+        <div class="chips">${servicos.map((s) => `<label class="chip"><input type="checkbox" name="servicos" value="${esc(s)}" ${marcados.includes(s) ? 'checked' : ''}><span>${esc(s)}</span></label>`).join('')}</div>
+        <input type="text" name="servico_outro" style="margin-top:8px" placeholder="Outro serviço (opcional)" value="${esc(outrosServ.join(', '))}"></div>
+      <div class="campo"><label for="f-trab">Nº de trabalhadores na frente</label>
+        <input type="number" id="f-trab" name="trabalhadores" inputmode="numeric" min="0" value="${esc(d.trabalhadores)}" style="max-width:160px"></div>
+    </section>
+    <section class="card"><h2>${ico('escudo')} Segurança no trabalho — EPI e EPC</h2>
+      <p class="dica" style="margin:-4px 0 12px;color:var(--suave);font-size:14px">Marque cada item: <b>C</b> = Conforme · <b>NC</b> = Não conforme · <b>NA</b> = Não se aplica</p>
+      <div id="checklist">${itens.map((it, i) => blocoChk(it, i)).join('')}</div>
+    </section>
+    <section class="card"><h2>${ico('ocorrencia')} Outros desvios encontrados</h2>
+      <p class="dica" style="margin:-4px 0 12px;color:var(--suave);font-size:14px">Algum risco que não está no checklist acima? Registre aqui com a ação corretiva.</p>
+      <div id="desvios">${(d.desvios || []).map((x) => blocoDesvio(x)).join('')}</div>
+      <button type="button" class="btn sec peq" onclick="addDesvio()">${ico('mais')} Adicionar desvio</button>
+    </section>
+    <section class="card"><h2>${ico('camera')} Registro fotográfico</h2>
+      ${blocoFotos(true)}<p class="dica" style="font-size:13px;color:var(--suave)">Fotos de EPIs, EPCs ou desvios. Escreva uma legenda curta em cada uma.</p>
+      <div class="campo" style="margin-top:12px"><label for="f-obs">Observações gerais</label>
+        <textarea id="f-obs" name="observacoes">${esc(d.observacoes)}</textarea></div>
+    </section>`;
+  }
+
+  // ocorrência
+  const ac = d.acidentado || {};
+  return local + `
+    <section class="card"><h2>${ico('ocorrencia')} O que aconteceu?</h2>
+      <div class="opcoes-grandes">${Object.entries(CLASSIF).map(([k, c]) => `
+        <label class="opcao" style="--cor:${c.cor};--cor-bg:${c.bg}"><input type="radio" name="classificacao" value="${k}" ${d.classificacao === k ? 'checked' : ''} onchange="atualizarOcorrencia()">
+          <span class="caixa"><span><b>${esc(c.nome)}</b><small>${esc(c.desc)}</small></span></span></label>`).join('')}
+      </div>
+      <div id="aviso-cat" class="alerta vermelho" style="margin-top:14px" hidden>${ico('ocorrencia')}
+        <span>Houve lesão: a engenheira será avisada com <b>prioridade</b>. A CAT deve ser emitida até o 1º dia útil seguinte (óbito: imediatamente). Comunique também por telefone.</span></div>
+    </section>
+    <section class="card"><h2>Quando aconteceu?</h2>
+      <div class="opcoes-grandes">${Object.entries(MOMENTO).map(([k, v]) => `
+        <label class="opcao"><input type="radio" name="momento" value="${k}" ${d.momento === k ? 'checked' : ''}><span class="caixa"><b>${esc(v)}</b></span></label>`).join('')}
+      </div>
+    </section>
+    <section class="card" id="sec-lesao" hidden><h2>Acidentado</h2>
+      <div class="campo"><span class="rotulo">Tipo de acidente</span>
+        <div class="chips">${Object.entries(TIPO_ACID).map(([k, v]) => `<label class="chip"><input type="radio" name="tipo_acidente" value="${k}" ${d.tipo_acidente === k ? 'checked' : ''}><span>${esc(v)}</span></label>`).join('')}</div></div>
+      <div class="duas">
+        <div class="campo"><label for="f-acn" class="req">Nome do acidentado</label><input type="text" id="f-acn" name="ac_nome" value="${esc(ac.nome)}"></div>
+        <div class="campo"><label for="f-acf">Função</label><input type="text" id="f-acf" name="ac_funcao" value="${esc(ac.funcao)}"></div>
+      </div>
+      <div class="campo"><span class="rotulo">Vínculo</span>
+        <div class="chips">${['Axial (próprio)', 'Terceirizado'].map((v) => `<label class="chip"><input type="radio" name="ac_vinculo" value="${esc(v)}" ${ac.vinculo === v ? 'checked' : ''}><span>${esc(v)}</span></label>`).join('')}</div></div>
+      <div class="campo"><span class="rotulo">Parte do corpo atingida</span>
+        <div class="chips">${PARTES.map((v) => `<label class="chip"><input type="checkbox" name="partes_corpo" value="${esc(v)}" ${(d.partes_corpo || []).includes(v) ? 'checked' : ''}><span>${esc(v)}</span></label>`).join('')}</div></div>
+      <div class="campo"><span class="rotulo">Natureza da lesão</span>
+        <div class="chips">${NATUREZA.map((v) => `<label class="chip"><input type="radio" name="natureza" value="${esc(v)}" ${d.natureza === v ? 'checked' : ''}><span>${esc(v)}</span></label>`).join('')}</div></div>
+      <div class="campo"><span class="rotulo">Atendimento</span>
+        <div class="chips">${ATENDIMENTO.map((v) => `<label class="chip"><input type="radio" name="atendimento" value="${esc(v)}" ${d.atendimento === v ? 'checked' : ''}><span>${esc(v)}</span></label>`).join('')}</div></div>
+    </section>
+    <section class="card" id="sec-dano" hidden><h2>Dano material</h2>
+      <div class="campo"><label for="f-dano">O que foi danificado?</label>
+        <textarea id="f-dano" name="dano_material" placeholder="Equipamento, veículo, rede, estrutura…">${esc(d.dano_material)}</textarea></div>
+    </section>
+    <section class="card"><h2>Relato</h2>
+      <div class="campo"><label for="f-desc" class="req">Descrição do ocorrido</label>
+        <textarea id="f-desc" name="descricao" rows="4" placeholder="O que a pessoa fazia, o que aconteceu, como aconteceu.">${esc(d.descricao)}</textarea></div>
+      <div class="campo"><label for="f-causa">Causa provável</label><textarea id="f-causa" name="causa">${esc(d.causa)}</textarea></div>
+      <div class="campo"><label for="f-acoes">Ações imediatas tomadas</label><textarea id="f-acoes" name="acoes_imediatas" placeholder="Isolamento da área, paralisação, primeiros socorros…">${esc(d.acoes_imediatas)}</textarea></div>
+      <div class="campo"><label for="f-test">Testemunhas</label><input type="text" id="f-test" name="testemunhas" value="${esc(d.testemunhas)}" placeholder="Nomes"></div>
+    </section>
+    <section class="card"><h2>${ico('camera')} Fotos</h2>${blocoFotos(true)}
+      <p class="dica" style="font-size:13px;color:var(--suave)">Local, equipamento, condição insegura. Não é preciso fotografar a lesão.</p></section>`;
+}
+
+function blocoChk(it, i) {
+  const s = it.status || '';
+  return `<div class="chk" data-i="${i}" data-s="${s}" data-desc="${esc(it.descricao)}" data-tipo="${esc(it.tipo)}">
+    <div class="chk-top"><span class="tag ${esc(it.tipo)}">${esc(it.tipo)}</span><p>${esc(it.descricao)}</p></div>
+    <div class="seg">${['C', 'NC', 'NA'].map((v) => `<button type="button" data-v="${v}" class="${s === v ? 'on' : ''}" onclick="marcarChk(${i},'${v}')">${v}<small>${ST_LEGENDA[v]}</small></button>`).join('')}</div>
+    <div class="nc-box" ${s === 'NC' ? '' : 'hidden'}>${camposDesvio(it, false)}</div>
+  </div>`;
+}
+function camposDesvio(x = {}, comDescricaoLivre = true) {
+  return `
+    <div class="campo"><label class="req">${comDescricaoLivre ? 'Descrição do desvio / risco' : 'O que foi observado'}</label>
+      <textarea data-k="desvio" rows="2">${esc(x.desvio)}</textarea></div>
+    <div class="campo"><label>Ação corretiva recomendada</label><textarea data-k="acao" rows="2">${esc(x.acao)}</textarea></div>
+    <div class="duas">
+      <div class="campo"><label>Responsável</label><input type="text" data-k="responsavel" value="${esc(x.responsavel)}"></div>
+      <div class="campo"><label>Prazo</label><select data-k="prazo"><option value="">—</option>${PRAZOS.map((p) => `<option ${x.prazo === p ? 'selected' : ''}>${p}</option>`).join('')}</select></div>
+    </div>`;
+}
+function blocoDesvio(x = {}) {
+  return `<div class="desvio">${camposDesvio(x, true)}
+    <button type="button" class="btn sec peq" onclick="this.closest('.desvio').remove();S.form.sujo=true">${ico('lixo')} Remover</button></div>`;
+}
+function addDesvio() { $('#desvios').insertAdjacentHTML('beforeend', blocoDesvio()); S.form.sujo = true; }
+function marcarChk(i, v) {
+  const el = $(`.chk[data-i="${i}"]`);
+  el.dataset.s = v;
+  $$('.seg button', el).forEach((b) => b.classList.toggle('on', b.dataset.v === v));
+  $('.nc-box', el).hidden = v !== 'NC';
+  el.classList.remove('erro-campo');
+  S.form.sujo = true;
+  if (v === 'NC') $('.nc-box textarea', el).focus();
+}
+
+function atualizarOcorrencia() {
+  const c = $('input[name="classificacao"]:checked')?.value;
+  const lesao = !!CLASSIF[c]?.lesao;
+  $('#sec-lesao').hidden = !lesao;
+  $('#aviso-cat').hidden = !lesao;
+  $('#sec-dano').hidden = c !== 'sem_lesao';
+}
+
+// ---------- fotos
+function blocoFotos(comLegenda = false) {
+  S.form.comLegenda = comLegenda;
+  return `<div class="fotos" id="fotos"></div>
+    <div class="botoes-foto">
+      <label class="btn sec"><input type="file" accept="image/*" capture="environment" hidden onchange="addFotos(this)">${ico('camera')} Tirar foto</label>
+      <label class="btn sec"><input type="file" accept="image/*" multiple hidden onchange="addFotos(this)">${ico('imagem')} Galeria</label>
+    </div>`;
+}
+async function addFotos(input) {
+  const arquivos = [...input.files];
+  input.value = '';
+  if (S.form.fotos.length + arquivos.length > 12) { toast('Máximo de 12 fotos por registro.', 4000, 'erro'); return; }
+  for (const f of arquivos) {
+    try {
+      const blob = await comprimirImagem(f);
+      S.form.fotos.push({ blob, url: URL.createObjectURL(blob), legenda: '' });
+      S.form.sujo = true;
+    } catch (e) { toast(e.message, 5000, 'erro'); }
+  }
+  desenharFotos();
+}
+function desenharFotos() {
+  const el = $('#fotos');
+  if (!el) return;
+  el.innerHTML = S.form.fotos.map((f, i) => `<figure class="foto" style="margin:0">
+      <img src="${esc(f.url || '')}" alt="Foto ${i + 1}" onclick="verFoto('${esc(f.url || '')}', ${i})">
+      <button type="button" class="tirar" onclick="tirarFoto(${i})" aria-label="Remover foto">${ico('x')}</button>
+      ${S.form.comLegenda ? `<input type="text" placeholder="Legenda da foto ${i + 1}" value="${esc(f.legenda)}" oninput="S.form.fotos[${i}].legenda=this.value">` : ''}
+    </figure>`).join('');
+}
+function tirarFoto(i) {
+  if (!confirm('Remover esta foto?')) return;
+  S.form.fotos.splice(i, 1); S.form.sujo = true; desenharFotos();
+}
+function verFoto(url, i, legenda = '') {
+  if (!url) return;
+  const leg = legenda || S.form?.fotos?.[i]?.legenda || '';
+  $('#camada').innerHTML = `<div class="lightbox" onclick="this.remove()"><img src="${esc(url)}" alt=""><p>${esc(leg)}</p><p style="opacity:.7;font-size:13px">Toque para fechar</p></div>`;
+}
+
+// ---------- localização
+async function usarLocalizacao() {
+  const info = $('#gps-info');
+  if (!navigator.geolocation) { info.innerHTML = `<div class="gps aviso">Este aparelho não informa a localização. Digite o endereço.</div>`; return; }
+  info.innerHTML = `<div class="gps aviso">${ico('pino')} Buscando localização…</div>`;
+  navigator.geolocation.getCurrentPosition(async (pos) => {
+    const { latitude: lat, longitude: lng, accuracy } = pos.coords;
+    S.form.geo = { lat, lng, prec: Math.round(accuracy) };
+    S.form.sujo = true;
+    mostrarGeo();
+    try {
+      const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=pt-BR`);
+      const j = await r.json();
+      const a = j.address || {};
+      const rua = [a.road, a.house_number].filter(Boolean).join(', ');
+      const bairro = a.suburb || a.neighbourhood || a.quarter || '';
+      const cidade = [a.city || a.town || a.village || a.municipality, a['ISO3166-2-lvl4']?.replace('BR-', '')].filter(Boolean).join(' - ');
+      const texto = [rua, bairro, cidade].filter(Boolean).join(' – ') || j.display_name || '';
+      const campo = $('#f-endereco');
+      if (texto && campo) {
+        if (!campo.value.trim() || confirm(`Trocar o endereço digitado por:\n\n${texto}`)) campo.value = texto;
+      }
+    } catch { toast('Localização gravada, mas não consegui descobrir o endereço. Digite-o.', 5000); }
+  }, (e) => {
+    info.innerHTML = `<div class="gps aviso">${ico('pino')} ${e.code === 1 ? 'Permissão de localização negada. Libere nas configurações do navegador ou digite o endereço.' : 'Não consegui a localização agora. Digite o endereço.'}</div>`;
+  }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 30000 });
+}
+function mostrarGeo() {
+  const g = S.form?.geo, info = $('#gps-info');
+  if (!info) return;
+  info.innerHTML = g ? `<div class="gps">${ico('pino')} Localização registrada (precisão ±${g.prec ?? '?'} m) · <button type="button" class="link" onclick="S.form.geo=null;mostrarGeo()">remover</button></div>` : '';
+}
+
+function depoisDeDesenharForm(tipo, r) {
+  desenharFotos();
+  mostrarGeo();
+  if (tipo === 'ocorrencia') atualizarOcorrencia();
+  if (tipo === 'dds') { const s = $('#f-tema'); if (s) $('#f-tema-outro-c').hidden = s.value !== '__outro'; }
+}
+
+// ---------- coletar + validar
+function coletarForm() {
+  const f = $('#form');
+  const v = (n) => (f.querySelector(`[name="${n}"]`)?.value || '').trim();
+  const marcado = (n) => f.querySelector(`[name="${n}"]:checked`)?.value || '';
+  const marcados = (n) => $$(`[name="${n}"]:checked`, f).map((x) => x.value);
+  const erros = [];
+  const exigir = (cond, msg, el) => { if (!cond) { erros.push(msg); el?.classList.add('erro-campo'); } };
+  $$('.erro-campo', f).forEach((e) => e.classList.remove('erro-campo'));
+
+  const tipo = S.form.tipo;
+  const base = {
+    tipo, obra: v('obra'), endereco: v('endereco'),
+    latitude: S.form.geo?.lat ?? null, longitude: S.form.geo?.lng ?? null, precisao_m: S.form.geo?.prec ?? null,
+  };
+  exigir(base.obra, 'Informe a obra / local.', $('#f-obra'));
+  if (tipo !== 'dds') exigir(base.endereco, 'Informe o endereço.', $('#f-endereco'));
+  let dados = {};
+
+  if (tipo === 'dds') {
+    const tema = v('tema') === '__outro' ? v('tema_outro') : v('tema');
+    dados = { tema, participantes: v('participantes'), observacoes: v('observacoes') };
+    exigir(tema, 'Informe o assunto abordado.', $('#f-tema'));
+    exigir(S.form.fotos.length > 0, 'Adicione pelo menos uma foto do DDS.', $('#fotos'));
+  }
+
+  if (tipo === 'visita') {
+    const lerDesvio = (el) => Object.fromEntries($$('[data-k]', el).map((x) => [x.dataset.k, x.value.trim()]));
+    const checklist = $$('.chk', f).map((el) => {
+      const item = { descricao: el.dataset.desc, tipo: el.dataset.tipo, status: el.dataset.s || '' };
+      if (!item.status) { el.classList.add('erro-campo'); }
+      if (item.status === 'NC') {
+        Object.assign(item, lerDesvio($('.nc-box', el)));
+        if (!item.desvio) $('.nc-box textarea', el).classList.add('erro-campo');
+      }
+      return item;
+    });
+    const desvios = $$('#desvios .desvio', f).map(lerDesvio).filter((x) => x.desvio || x.acao);
+    const servicos = [...marcados('servicos'), ...v('servico_outro').split(',').map((s) => s.trim()).filter(Boolean)];
+    dados = { empresa: v('empresa'), encarregado: v('encarregado'), servicos, trabalhadores: v('trabalhadores'), checklist, desvios, observacoes: v('observacoes') };
+    exigir(servicos.length, 'Marque qual é o serviço.', null);
+    exigir(checklist.every((c) => c.status), 'Responda todos os itens do checklist (C, NC ou NA).', null);
+    exigir(checklist.every((c) => c.status !== 'NC' || c.desvio), 'Descreva o que foi observado em cada item NC.', null);
+  }
+
+  if (tipo === 'ocorrencia') {
+    const classificacao = marcado('classificacao');
+    const lesao = !!CLASSIF[classificacao]?.lesao;
+    dados = {
+      classificacao, momento: marcado('momento'),
+      tipo_acidente: lesao ? marcado('tipo_acidente') : '',
+      acidentado: lesao ? { nome: v('ac_nome'), funcao: v('ac_funcao'), vinculo: marcado('ac_vinculo') } : null,
+      partes_corpo: lesao ? marcados('partes_corpo') : [],
+      natureza: lesao ? marcado('natureza') : '',
+      atendimento: lesao ? marcado('atendimento') : '',
+      dano_material: classificacao === 'sem_lesao' ? v('dano_material') : '',
+      descricao: v('descricao'), causa: v('causa'), acoes_imediatas: v('acoes_imediatas'), testemunhas: v('testemunhas'),
+    };
+    exigir(classificacao, 'Escolha o que aconteceu (tipo de ocorrência).', null);
+    exigir(dados.momento, 'Informe quando aconteceu.', null);
+    if (lesao) exigir(dados.acidentado.nome, 'Informe o nome do acidentado.', $('#f-acn'));
+    exigir(dados.descricao, 'Descreva o ocorrido.', $('#f-desc'));
+  }
+  return { base, dados, erros };
+}
+
+async function subirFotosPendentes(btn) {
+  const pend = S.form.fotos.filter((f) => !f.path);
+  let n = 0;
+  for (const f of S.form.fotos) {
+    if (f.path) continue;
+    n++;
+    btn.innerHTML = `Enviando foto ${n} de ${pend.length}…`;
+    f.path = await api.enviarFoto(f.blob, S.perfil.id);
+  }
+  return S.form.fotos.map((f) => ({ path: f.path, legenda: (f.legenda || '').trim() }));
+}
+
+async function enviarForm(ev) {
+  ev.preventDefault();
+  const { base, dados, erros } = coletarForm();
+  if (erros.length) {
+    toast(erros[0], 5000, 'erro');
+    ($('.erro-campo') || $('#form')).scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+  const btn = $('#btn-enviar'); const txt = btn.innerHTML;
+  btn.disabled = true;
+  try {
+    const fotos = await subirFotosPendentes(btn);
+    btn.innerHTML = 'Enviando registro…';
+    const res = await api.registrar({ ...base, dados, fotos });
+    guardarEnviado({ tipo: base.tipo, numero: res.numero, obra: base.obra });
+    const tipo = base.tipo, lesao = !!CLASSIF[dados.classificacao]?.lesao;
+    S.form = null;
+    ir('sucesso', { tipo, numero: res.numero, lesao }, true);
+  } catch (e) {
+    toast('Não foi enviado: ' + traduzErro(e) + ' Seus dados continuam aqui — tente de novo.', 8000, 'erro');
+    btn.disabled = false; btn.innerHTML = txt;
+  }
+}
+
+function telaSucesso({ tipo, numero, lesao }) {
+  app().innerHTML = `${topo({ titulo: 'Vistoria QSMS', sub: S.perfil.nome })}
+  <main class="pagina"><div class="sucesso">
+    <div class="bolha">${ico('ok')}</div>
+    <h1>Registro enviado!</h1>
+    <p>${esc(TIPOS[tipo]?.nome)}</p>
+    <div class="numero">nº ${esc(numero)}</div>
+    <p>A engenheira de segurança já recebeu.</p>
+    ${lesao ? `<div class="alerta vermelho" style="text-align:left">${ico('ocorrencia')}<span>Acidente com lesão: <b>avise a engenheira também por telefone</b> para a emissão da CAT.</span></div>` : ''}
+    <button class="btn bloco" style="margin-top:18px" onclick="ir('tecnico',{},true)">Voltar ao início</button>
+  </div></main>`;
+}
+
+// ============================================================
+//  ADMINISTRADOR
+// ============================================================
+async function carregarRegistros() {
+  S.admin.registros = await api.registros();
+}
+
+async function telaAdmin({ aba } = {}) {
+  if (aba) S.admin.aba = aba;
+  app().innerHTML = `${topo({ titulo: 'Painel QSMS', sub: S.perfil.nome, extra: `<button onclick="ir('tecnico')" title="Registrar como técnico">${ico('capacete')}<span>Registrar</span></button>` })}
+  <main class="pagina larga">
+    <nav class="abas nao-imprimir">
+      ${[['registros', 'Registros'], ['usuarios', 'Usuários'], ['listas', 'Listas e checklist']].map(([k, n]) => `<button class="${S.admin.aba === k ? 'on' : ''}" onclick="trocarAba('${k}')">${n}</button>`).join('')}
+    </nav>
+    <div id="aba"><div class="carregando" style="min-height:30vh"><div><div class="giro"></div>Carregando…</div></div></div>
+  </main>`;
+  try {
+    if (S.admin.aba === 'registros') { await carregarRegistros(); desenharRegistros(); }
+    if (S.admin.aba === 'usuarios') { S.admin.usuarios = await api.usuarios(); desenharUsuarios(); }
+    if (S.admin.aba === 'listas') { await carregarListas(); desenharListas(); }
+  } catch (e) { $('#aba').innerHTML = `<div class="alerta vermelho">${esc(traduzErro(e))}</div>`; }
+}
+function trocarAba(k) { S.admin.aba = k; ir('admin', { aba: k }, true); }
+
+const ehLesao = (r) => r.tipo === 'ocorrencia' && CLASSIF[r.dados?.classificacao]?.lesao;
+const ncsDe = (r) => r.tipo === 'visita' ? (r.dados?.checklist || []).filter((c) => c.status === 'NC').length + (r.dados?.desvios || []).length : 0;
+function resumoReg(r) {
+  if (r.tipo === 'dds') return r.dados?.tema || '';
+  if (r.tipo === 'visita') return (r.dados?.servicos || []).join(', ');
+  return CLASSIF[r.dados?.classificacao]?.nome || '';
+}
+
+function filtrarRegistros() {
+  const f = S.admin.filtros;
+  const limite = f.periodo ? Date.now() - Number(f.periodo) * 864e5 : 0;
+  const busca = f.busca.toLowerCase();
+  return S.admin.registros.filter((r) =>
+    (f.lixeira ? r.excluido_em : !r.excluido_em)
+    && (!f.tipo || r.tipo === f.tipo)
+    && (!f.tecnico || r.autor_id === f.tecnico)
+    && (!f.status || r.status === f.status)
+    && (!limite || new Date(r.criado_em).getTime() >= limite)
+    && (!busca || `${r.numero} ${r.obra} ${r.endereco} ${r.autor_nome} ${resumoReg(r)}`.toLowerCase().includes(busca)));
+}
+
+function desenharRegistros() {
+  const todos = S.admin.registros.filter((r) => !r.excluido_em);
+  const mes = todos.filter((r) => Date.now() - new Date(r.criado_em) < 30 * 864e5);
+  const urgentes = todos.filter((r) => ehLesao(r) && r.status !== 'concluido');
+  const tecnicos = [...new Map(S.admin.registros.map((r) => [r.autor_id, r.autor_nome])).entries()];
+  const f = S.admin.filtros;
+  $('#aba').innerHTML = `
+    ${urgentes.map((r) => `<div class="alerta vermelho" style="cursor:pointer" onclick="ir('registro',{id:'${r.id}'})">${ico('ocorrencia')}
+      <span><b>${esc(CLASSIF[r.dados.classificacao].nome)}</b> — ${esc(r.obra)} · ${esc(r.autor_nome)} · ${fmtDataHora(r.criado_em)}<br>
+      ${r.dados.classificacao === 'fatal' ? '<b>Óbito: comunicação imediata à Previdência e à autoridade policial.</b>' : `CAT até <b>${prazoCAT(r.criado_em)}</b> (1º dia útil seguinte). Toque para abrir.`}</span></div>`).join('')}
+    <div class="kpis">
+      <div class="kpi"><small>Novos (não abertos)</small><b>${todos.filter((r) => r.status === 'novo').length}</b></div>
+      <div class="kpi"><small>DDS · 30 dias</small><b>${mes.filter((r) => r.tipo === 'dds').length}</b></div>
+      <div class="kpi"><small>Visitas · 30 dias</small><b>${mes.filter((r) => r.tipo === 'visita').length}</b></div>
+      <div class="kpi"><small>Não conformidades · 30 dias</small><b>${mes.reduce((s, r) => s + ncsDe(r), 0)}</b></div>
+      <div class="kpi ${mes.some((r) => r.tipo === 'ocorrencia') ? 'vermelho' : ''}"><small>Ocorrências · 30 dias</small><b>${mes.filter((r) => r.tipo === 'ocorrencia').length}</b></div>
+    </div>
+    <div class="card">
+      <div class="filtros">
+        <input type="search" placeholder="Buscar obra, endereço, nº, técnico…" value="${esc(f.busca)}" oninput="S.admin.filtros.busca=this.value;desenharListaReg()">
+        <select onchange="S.admin.filtros.tecnico=this.value;desenharListaReg()"><option value="">Todos os técnicos</option>
+          ${tecnicos.map(([id, n]) => `<option value="${esc(id)}" ${f.tecnico === id ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>
+        <select onchange="S.admin.filtros.periodo=this.value;desenharListaReg()">
+          ${[['7', 'Últimos 7 dias'], ['30', 'Últimos 30 dias'], ['90', 'Últimos 90 dias'], ['365', 'Último ano'], ['', 'Todo o período']].map(([v, n]) => `<option value="${v}" ${f.periodo === v ? 'selected' : ''}>${n}</option>`).join('')}</select>
+        <select onchange="S.admin.filtros.status=this.value;desenharListaReg()"><option value="">Todos os status</option>
+          ${Object.entries(STATUS).map(([k, n]) => `<option value="${k}" ${f.status === k ? 'selected' : ''}>${n}</option>`).join('')}</select>
+      </div>
+      <div class="filtros-tipo">
+        <div class="chips">${[['', 'Todos'], ['dds', 'DDS'], ['visita', 'Visitas'], ['ocorrencia', 'Ocorrências']].map(([k, n]) => `<label class="chip"><input type="radio" name="ft" ${f.tipo === k ? 'checked' : ''} onchange="S.admin.filtros.tipo='${k}';desenharListaReg()"><span>${n}</span></label>`).join('')}</div>
+        <label style="display:flex;gap:6px;align-items:center;font-size:14px;color:var(--suave);margin-left:auto"><input type="checkbox" ${f.lixeira ? 'checked' : ''} onchange="S.admin.filtros.lixeira=this.checked;desenharListaReg()"> Lixeira</label>
+        <button class="btn sec peq" onclick="exportarCSV()">${ico('baixar')} Planilha</button>
+        <button class="btn sec peq" onclick="ir('admin',{aba:'registros'},true)">${ico('atualizar')} Atualizar</button>
+      </div>
+    </div>
+    <div id="lista-reg" class="lista-reg"></div>`;
+  desenharListaReg();
+}
+
+function desenharListaReg() {
+  const lista = filtrarRegistros();
+  $('#lista-reg').innerHTML = lista.length ? lista.map((r) => {
+    const T = TIPOS[r.tipo];
+    const c = CLASSIF[r.dados?.classificacao];
+    const nc = ncsDe(r);
+    return `<button class="reg" style="--cor:${c ? c.cor : T.cor};--cor-bg:${c ? c.bg : T.bg}" onclick="ir('registro',{id:'${r.id}'})">
+      <span class="bolha">${ico(r.tipo)}</span>
+      <span class="meio"><b>${esc(T.nome)} nº ${r.numero} · ${esc(r.obra)}</b>
+        <small>${esc(resumoReg(r))}</small>
+        <small>${esc(r.autor_nome)}${r.endereco ? ' · ' + esc(r.endereco) : ''}</small></span>
+      <span class="lado">${fmtData(r.criado_em)}<br><b>${fmtHora(r.criado_em)}</b><br>
+        ${nc ? `<span class="selo vermelho">${nc} NC</span> ` : ''}<span class="selo ${r.status}">${STATUS[r.status]}</span></span>
+    </button>`;
+  }).join('') : `<div class="vazio">Nenhum registro com esses filtros.</div>`;
+}
+
+function exportarCSV() {
+  const linhas = filtrarRegistros();
+  const cab = ['Nº', 'Tipo', 'Data', 'Hora', 'Técnico', 'Obra', 'Endereço', 'Latitude', 'Longitude', 'Resumo', 'NCs', 'Status', 'Parecer'];
+  const q = (s) => `"${String(s ?? '').replace(/"/g, '""')}"`;
+  const csv = [cab, ...linhas.map((r) => [r.numero, TIPOS[r.tipo].nome, fmtData(r.criado_em), fmtHora(r.criado_em), r.autor_nome, r.obra, r.endereco,
+    r.latitude ?? '', r.longitude ?? '', resumoReg(r), ncsDe(r), STATUS[r.status], r.parecer])].map((l) => l.map(q).join(';')).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = `vistorias-qsms-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+}
+
+// ---------- detalhe do registro
+async function telaRegistro({ id }) {
+  app().innerHTML = `${topo({ titulo: 'Registro', sub: 'Painel QSMS', voltarBtn: true })}<main class="pagina larga" id="det"><div class="carregando"><div><div class="giro"></div>Carregando…</div></div></main>`;
+  try {
+    if (!S.admin.registros.length) await carregarRegistros();
+    let r = S.admin.registros.find((x) => x.id === id);
+    if (!r) throw new Error('Registro não encontrado.');
+    if (r.status === 'novo') {
+      r = await api.atualizarRegistro(r.id, { status: 'em_analise' });
+      substituirReg(r);
+    }
+    const urls = await api.urlsFotos((r.fotos || []).map((f) => f.path));
+    const hist = await api.auditoria(r.id).catch(() => []);
+    $('#det').innerHTML = detalheHTML(r, urls, hist);
+  } catch (e) { $('#det').innerHTML = `<div class="alerta vermelho">${esc(traduzErro(e))}</div>`; }
+}
+function substituirReg(r) { const i = S.admin.registros.findIndex((x) => x.id === r.id); if (i >= 0) S.admin.registros[i] = r; }
+
+const dado = (rot, val) => val ? `<div class="dado"><small>${esc(rot)}</small><div>${esc(val)}</div></div>` : '';
+
+function detalheHTML(r, urls, hist) {
+  const T = TIPOS[r.tipo], d = r.dados || {};
+  const mapa = r.latitude != null ? `<a href="https://www.google.com/maps?q=${r.latitude},${r.longitude}" target="_blank" rel="noopener">${r.latitude.toFixed(6)}, ${r.longitude.toFixed(6)}</a> (±${r.precisao_m ?? '?'} m)` : '';
+  let especifico = '';
+  if (r.tipo === 'dds') {
+    especifico = `<section class="card"><h2>2. Diálogo Diário de Segurança (DDS)</h2><div class="grade-dados">
+      ${dado('DDS realizado no dia?', 'SIM')}${dado('Tema abordado', d.tema)}${dado('Nº de participantes', d.participantes)}</div>
+      ${d.observacoes ? `<div style="margin-top:10px">${dado('Observações', d.observacoes)}</div>` : ''}</section>`;
+  }
+  if (r.tipo === 'visita') {
+    const ncs = [...(d.checklist || []).filter((c) => c.status === 'NC'), ...(d.desvios || [])];
+    especifico = `<section class="card"><h2>2. Serviço</h2><div class="grade-dados">
+        ${dado('Empresa / setor', d.empresa)}${dado('Serviço(s)', (d.servicos || []).join(', '))}${dado('Trabalhadores na frente', d.trabalhadores)}${dado('Encarregado / resp. no local', d.encarregado)}</div></section>
+      <section class="card"><h2>3. Verificação de segurança (EPI e EPC)</h2>
+        <table class="tabela"><thead><tr><th>Item / equipamento avaliado</th><th>Tipo</th><th>Status</th><th>Observações</th></tr></thead><tbody>
+        ${(d.checklist || []).map((c) => `<tr><td>${esc(c.descricao)}</td><td>${esc(c.tipo)}</td><td class="st ${esc(c.status)}">${esc(c.status)}</td><td>${esc(c.desvio || '')}</td></tr>`).join('')}
+        </tbody></table><p style="font-size:12px;color:var(--suave);margin:6px 0 0">C = Conforme · NC = Não Conforme · NA = Não Aplicável</p></section>
+      <section class="card"><h2>4. Não conformidades e plano de ação</h2>
+        ${ncs.length ? `<table class="tabela"><thead><tr><th>Item</th><th>Descrição do desvio / risco</th><th>Ação corretiva</th><th>Responsável</th><th>Prazo</th></tr></thead><tbody>
+        ${ncs.map((x, i) => `<tr><td>${String(i + 1).padStart(2, '0')}</td><td>${x.descricao ? `<b>${esc(x.descricao)}</b><br>` : ''}${esc(x.desvio)}</td><td>${esc(x.acao)}</td><td>${esc(x.responsavel)}</td><td>${esc(x.prazo)}</td></tr>`).join('')}
+        </tbody></table>` : '<p style="margin:0;color:var(--verde)">Nenhuma não conformidade registrada.</p>'}
+        ${d.observacoes ? `<div style="margin-top:10px">${dado('Observações gerais', d.observacoes)}</div>` : ''}</section>`;
+  }
+  if (r.tipo === 'ocorrencia') {
+    const c = CLASSIF[d.classificacao] || {};
+    const ac = d.acidentado || {};
+    especifico = `<section class="card" style="border-left:5px solid ${c.cor || '#999'}"><h2>2. Classificação da ocorrência</h2><div class="grade-dados">
+        ${dado('Classificação', c.nome)}${dado('Tipo de acidente', TIPO_ACID[d.tipo_acidente])}${dado('Quando aconteceu (relato)', MOMENTO[d.momento])}</div>
+        ${c.lesao ? `<div class="alerta vermelho" style="margin:12px 0 0">${ico('ocorrencia')}<span>${d.classificacao === 'fatal' ? 'Óbito — CAT e comunicação à autoridade policial <b>imediatas</b>.' : `Prazo da CAT: até <b>${prazoCAT(r.criado_em)}</b> (1º dia útil após ${fmtData(r.criado_em)}).`}</span></div>` : ''}
+      </section>
+      ${c.lesao ? `<section class="card"><h2>3. Acidentado</h2><div class="grade-dados">
+        ${dado('Nome', ac.nome)}${dado('Função', ac.funcao)}${dado('Vínculo', ac.vinculo)}${dado('Parte do corpo', (d.partes_corpo || []).join(', '))}${dado('Natureza da lesão', d.natureza)}${dado('Atendimento', d.atendimento)}</div></section>` : ''}
+      ${d.dano_material ? `<section class="card"><h2>Dano material</h2>${dado('', d.dano_material)}</section>` : ''}
+      <section class="card"><h2>${c.lesao ? '4' : '3'}. Relato</h2><div class="grade-dados" style="grid-template-columns:1fr">
+        ${dado('Descrição do ocorrido', d.descricao)}${dado('Causa provável', d.causa)}${dado('Ações imediatas', d.acoes_imediatas)}${dado('Testemunhas', d.testemunhas)}</div></section>`;
+  }
+  const fotos = r.fotos || [];
+  const titulosImp = { dds: 'REGISTRO DE DDS — DIÁLOGO DIÁRIO DE SEGURANÇA', visita: 'RELATÓRIO DE INSPEÇÃO DE CAMPO — SST', ocorrencia: 'COMUNICAÇÃO DE INCIDENTE / ACIDENTE — SST' };
+  return `
+  <div class="so-impressao cab-impressao"><img src="logo.png" alt=""><div><b>${titulosImp[r.tipo]}</b><br><small>Saúde e Segurança do Trabalho · Gestão de Prevenção de Riscos na Obra · Nº ${r.numero}</small></div></div>
+  <div class="det-cab nao-imprimir">
+    <h1>${esc(T.nome)} nº ${r.numero}${r.excluido_em ? ' <span class="selo cinza">Na lixeira</span>' : ''}</h1>
+    <div class="linha-btns">
+      <button class="btn sec peq" onclick="imprimir()">${ico('imprimir')} PDF / Imprimir</button>
+      <button class="btn sec peq" onclick="ir('editar',{id:'${r.id}'})">${ico('lapis')} Editar</button>
+      ${r.excluido_em
+        ? `<button class="btn sec peq" onclick="lixeira('${r.id}', false)">${ico('atualizar')} Restaurar</button>`
+        : `<button class="btn sec peq" onclick="lixeira('${r.id}', true)">${ico('lixo')} Lixeira</button>`}
+    </div>
+  </div>
+  <div class="lado-a-lado">
+    <div>
+      <section class="card"><h2>1. Identificação geral</h2><div class="grade-dados">
+        ${dado('Obra / local', r.obra)}${dado('Endereço', r.endereco)}
+        <div class="dado"><small>Data e hora do envio (servidor)</small><div><b>${fmtDataHora(r.criado_em)}</b></div></div>
+        ${dado('TST responsável', r.autor_nome)}
+        ${mapa ? `<div class="dado"><small>Coordenadas GPS</small><div>${mapa}</div></div>` : ''}
+      </div></section>
+      ${especifico}
+      <section class="card"><h2>${ico('camera')} Registro fotográfico</h2>
+        ${fotos.length ? `<div class="fotos">${fotos.map((f, i) => `<figure class="foto" style="margin:0">
+          <img src="${esc(urls[f.path] || '')}" alt="Foto ${i + 1}" onclick="verFoto(this.src, ${i}, ${esc(JSON.stringify(f.legenda || ''))})">
+          <figcaption>Foto ${i + 1}${f.legenda ? ' — ' + esc(f.legenda) : ''}</figcaption></figure>`).join('')}</div>` : '<p style="margin:0;color:var(--suave)">Sem fotos.</p>'}
+      </section>
+      ${r.parecer ? `<section class="card so-impressao"><h2>Parecer da Engenharia de Segurança</h2><div style="white-space:pre-wrap">${esc(r.parecer)}</div></section>` : ''}
+      <div class="so-impressao assinaturas">
+        <div>Assinatura do Inspetor de SST<br>${esc(r.autor_nome)}</div>
+        <div>Assinatura do Encarregado / Resp. pela Obra<br>${esc(r.dados?.encarregado || '')}</div>
+      </div>
+    </div>
+    <aside class="nao-imprimir">
+      <section class="card"><h2>Análise da engenharia</h2>
+        <div class="campo"><label for="d-status">Status</label>
+          <select id="d-status">${Object.entries(STATUS).map(([k, n]) => `<option value="${k}" ${r.status === k ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
+        <div class="campo"><label for="d-parecer">Parecer / comentário</label>
+          <textarea id="d-parecer" rows="5" placeholder="Visível só para a administração. Sai no PDF.">${esc(r.parecer)}</textarea></div>
+        <button class="btn bloco" onclick="salvarAnalise('${r.id}', this)">Salvar análise</button>
+      </section>
+      <section class="card"><h2>Histórico</h2>
+        <ul class="historico">
+          ${hist.map((h) => `<li>${fmtDataHora(h.quando)} — ${esc(h.usuario_nome || '')} ${esc(String(h.acao).replace(/(novo|em_analise|concluido)/g, (k) => STATUS[k]))}</li>`).join('')}
+          <li>${fmtDataHora(r.criado_em)} — enviado por ${esc(r.autor_nome)}</li>
+        </ul></section>
+    </aside>
+  </div>`;
+}
+
+async function salvarAnalise(id, btn) {
+  btn.disabled = true;
+  try {
+    const r = await api.atualizarRegistro(id, { status: $('#d-status').value, parecer: $('#d-parecer').value.trim() });
+    substituirReg(r);
+    toast('Análise salva.', 2500, 'ok');
+    ir('registro', { id }, true);
+  } catch (e) { toast(traduzErro(e), 6000, 'erro'); btn.disabled = false; }
+}
+async function lixeira(id, enviar) {
+  if (enviar && !confirm('Enviar este registro para a lixeira? Ele pode ser restaurado depois (Registros → Lixeira).')) return;
+  try {
+    const r = await api.atualizarRegistro(id, { excluido_em: enviar ? new Date().toISOString() : null });
+    substituirReg(r);
+    toast(enviar ? 'Enviado para a lixeira.' : 'Registro restaurado.', 3000, 'ok');
+    ir('registro', { id }, true);
+  } catch (e) { toast(traduzErro(e), 6000, 'erro'); }
+}
+async function imprimir() {
+  // espera as fotos carregarem antes de abrir a impressão
+  await Promise.all($$('#det img').map((i) => i.complete ? null : new Promise((ok) => { i.onload = i.onerror = ok; })));
+  window.print();
+}
+
+// ---------- edição pelo admin (mesmo formulário do técnico)
+async function telaEditar({ id }) {
+  const r = S.admin.registros.find((x) => x.id === id);
+  if (!r) { ir('admin', {}, true); return; }
+  if (!S.form || S.form.editId !== id) {
+    const urls = await api.urlsFotos((r.fotos || []).map((f) => f.path)).catch(() => ({}));
+    S.form = { tipo: r.tipo, editId: id, sujo: false,
+      geo: r.latitude != null ? { lat: r.latitude, lng: r.longitude, prec: r.precisao_m } : null,
+      fotos: (r.fotos || []).map((f) => ({ path: f.path, legenda: f.legenda || '', url: urls[f.path] || '' })) };
+  }
+  app().innerHTML = `${topo({ titulo: `Editar ${TIPOS[r.tipo].nome} nº ${r.numero}`, sub: 'A versão anterior fica guardada no histórico', voltarBtn: true })}
+  <main class="pagina">
+    <form id="form" novalidate onsubmit="salvarEdicao(event)" oninput="S.form.sujo=true" onchange="S.form.sujo=true">
+      ${corpoForm(r.tipo, r)}
+      <div class="alerta amarelo">${ico('lapis')}<span>Data, hora e autor do envio não podem ser alterados.</span></div>
+      <button class="btn bloco" id="btn-enviar">Salvar alterações</button>
+    </form>
+  </main>`;
+  depoisDeDesenharForm(r.tipo, r);
+}
+async function salvarEdicao(ev) {
+  ev.preventDefault();
+  const { base, dados, erros } = coletarForm();
+  if (erros.length && !confirm(`Atenção: ${erros[0]}\n\nSalvar mesmo assim?`)) return;
+  const btn = $('#btn-enviar'); btn.disabled = true;
+  try {
+    const fotos = await subirFotosPendentes(btn);
+    const { tipo, ...campos } = base;
+    const r = await api.atualizarRegistro(S.form.editId, { ...campos, dados, fotos });
+    substituirReg(r);
+    S.form = null;
+    toast('Alterações salvas.', 2500, 'ok');
+    history.back();
+  } catch (e) { toast(traduzErro(e), 7000, 'erro'); btn.disabled = false; btn.textContent = 'Salvar alterações'; }
+}
+
+// ---------- usuários
+function desenharUsuarios() {
+  const us = S.admin.usuarios;
+  $('#aba').innerHTML = `
+    <div class="det-cab"><h1 style="font-size:20px">Usuários</h1>
+      <button class="btn" onclick="formUsuario()">${ico('mais')} Novo usuário</button></div>
+    ${us.map((u) => `<button class="usuario" onclick="formUsuario('${u.id}')" style="${u.ativo ? '' : 'opacity:.55'}">
+      <span class="avatar">${esc(iniciais(u.nome))}</span>
+      <span style="flex:1;min-width:0"><b>${esc(u.nome)}</b><br><small style="color:var(--suave)">${esc(loginCurto(u.email))} · ${esc(u.funcao || (u.papel === 'admin' ? 'Administrador' : 'Técnico'))}</small></span>
+      <span class="selo ${u.papel === 'admin' ? 'novo' : 'cinza'}">${u.papel === 'admin' ? 'Admin' : 'Técnico'}</span>
+      ${u.ativo ? '' : '<span class="selo vermelho">Bloqueado</span>'}
+    </button>`).join('')}
+    ${DEMO ? `<p style="margin-top:20px"><button class="link" onclick="if(confirm('Apagar todos os dados do modo demonstração neste aparelho?'))Demo.apagarTudo()">Apagar dados do modo demonstração</button></p>` : ''}`;
+}
+function fecharModal() { $('#camada').innerHTML = ''; }
+function formUsuario(id) {
+  const u = id ? S.admin.usuarios.find((x) => x.id === id) : null;
+  const eu = u?.id === S.perfil.id;
+  $('#camada').innerHTML = `<div class="fundo-modal" onclick="if(event.target===this)fecharModal()"><div class="modal">
+    <h2>${u ? 'Editar usuário' : 'Novo usuário'}</h2>
+    <form onsubmit="salvarUsuario(event, ${u ? `'${u.id}'` : 'null'})">
+      <div class="campo"><label class="req">Nome completo</label><input type="text" id="u-nome" value="${esc(u?.nome)}" required></div>
+      ${u ? `<div class="campo"><label>Login</label><input type="text" value="${esc(loginCurto(u.email))}" disabled></div>`
+          : `<div class="campo"><label class="req">Usuário (login)</label><input type="text" id="u-login" autocapitalize="none" spellcheck="false" placeholder="ex.: joao.silva" required>
+             <p class="dica">Sem espaços. É o que o técnico digita para entrar. Pode ser também um e-mail.</p></div>
+             <div class="campo"><label class="req">Senha inicial</label><input type="text" id="u-senha" minlength="8" required value="${esc(senhaSugerida())}">
+             <p class="dica">Mínimo 8 caracteres. Anote e passe para o técnico.</p></div>`}
+      <div class="duas">
+        <div class="campo"><label>Função</label><input type="text" id="u-funcao" value="${esc(u?.funcao ?? 'Técnico de Segurança do Trabalho')}"></div>
+        <div class="campo"><label>Registro profissional</label><input type="text" id="u-registro" value="${esc(u?.registro)}"></div>
+      </div>
+      <div class="campo"><label>Perfil</label><select id="u-papel" ${eu ? 'disabled' : ''}>
+        <option value="tecnico" ${u?.papel !== 'admin' ? 'selected' : ''}>Técnico (só registra)</option>
+        <option value="admin" ${u?.papel === 'admin' ? 'selected' : ''}>Administrador (vê e edita tudo)</option></select></div>
+      <button class="btn bloco">${u ? 'Salvar' : 'Cadastrar'}</button>
+    </form>
+    ${u ? `<hr style="border:0;border-top:1px solid var(--borda);margin:18px 0">
+      <div class="linha-btns">
+        <button class="btn sec peq" onclick="trocarSenhaUsuario('${u.id}')">Redefinir senha</button>
+        ${eu ? '' : (u.ativo ? `<button class="btn perigo peq" onclick="acaoUsuario('bloquear','${u.id}')">Bloquear acesso</button>`
+                          : `<button class="btn verde peq" onclick="acaoUsuario('reativar','${u.id}')">Reativar acesso</button>`)}
+      </div>` : ''}
+    <button class="btn sec bloco" style="margin-top:12px" onclick="fecharModal()">Fechar</button>
+  </div></div>`;
+}
+function senhaSugerida() {
+  const p = ['Obra', 'Capacete', 'Seguro', 'Axial', 'Canteiro', 'Prumo'];
+  return p[Math.floor(Math.random() * p.length)] + '@' + String(Math.floor(1000 + Math.random() * 9000));
+}
+async function salvarUsuario(ev, id) {
+  ev.preventDefault();
+  const corpo = id
+    ? { acao: 'editar', id, nome: $('#u-nome').value.trim(), funcao: $('#u-funcao').value.trim(), registro: $('#u-registro').value.trim(), papel: $('#u-papel').value }
+    : { acao: 'criar', nome: $('#u-nome').value.trim(), login: $('#u-login').value.trim(), senha: $('#u-senha').value, funcao: $('#u-funcao').value.trim(), registro: $('#u-registro').value.trim(), papel: $('#u-papel').value };
+  if (!id && /\s/.test(corpo.login)) { toast('O usuário não pode ter espaços.', 4000, 'erro'); return; }
+  try {
+    await api.gerenciar(corpo);
+    fecharModal();
+    toast(id ? 'Usuário atualizado.' : `Usuário criado. Login: ${loginCurto(paraLogin(corpo.login))} · Senha: ${corpo.senha}`, id ? 3000 : 12000, 'ok');
+    S.admin.usuarios = await api.usuarios(); desenharUsuarios();
+  } catch (e) { toast(traduzErro(e), 6000, 'erro'); }
+}
+async function trocarSenhaUsuario(id) {
+  const s = prompt('Nova senha (mínimo 8 caracteres):', senhaSugerida());
+  if (!s) return;
+  try { await api.gerenciar({ acao: 'senha', id, senha: s }); toast('Senha redefinida: ' + s, 10000, 'ok'); }
+  catch (e) { toast(traduzErro(e), 6000, 'erro'); }
+}
+async function acaoUsuario(acao, id) {
+  if (acao === 'bloquear' && !confirm('Bloquear este usuário? Ele não consegue mais entrar. Os registros dele continuam guardados.')) return;
+  try {
+    await api.gerenciar({ acao, id });
+    fecharModal();
+    toast(acao === 'bloquear' ? 'Acesso bloqueado.' : 'Acesso reativado.', 3000, 'ok');
+    S.admin.usuarios = await api.usuarios(); desenharUsuarios();
+  } catch (e) { toast(traduzErro(e), 6000, 'erro'); }
+}
+
+// ---------- listas e checklist
+function desenharListas() {
+  const secao = (titulo, dica, tabela, tipo, itens, campo) => `<section class="card"><h2>${titulo}</h2>
+    <p style="margin:-6px 0 12px;font-size:14px;color:var(--suave)">${dica}</p>
+    ${itens.map((it) => `<div class="item-lista ${it.ativo ? '' : 'inativo'}">
+      ${tabela === 'checklist_itens' ? `<select onchange="salvarItem('${tabela}','${it.id}',{tipo:this.value})">${['EPI', 'EPC', 'Geral'].map((t) => `<option ${it.tipo === t ? 'selected' : ''}>${t}</option>`).join('')}</select>` : ''}
+      <input type="text" value="${esc(it[campo])}" onchange="salvarItem('${tabela}','${it.id}',{${campo}:this.value.trim()})">
+      <label class="liga"><input type="checkbox" ${it.ativo ? 'checked' : ''} onchange="salvarItem('${tabela}','${it.id}',{ativo:this.checked})"> ativo</label>
+    </div>`).join('')}
+    <form class="item-lista" style="margin-top:12px" onsubmit="novoItem(event,'${tabela}','${tipo}','${campo}')">
+      ${tabela === 'checklist_itens' ? `<select name="tipo">${['EPI', 'EPC', 'Geral'].map((t) => `<option>${t}</option>`).join('')}</select>` : ''}
+      <input type="text" name="valor" placeholder="Adicionar…" required>
+      <button class="btn peq">${ico('mais')}</button>
+    </form></section>`;
+  $('#aba').innerHTML = `
+    ${secao('Checklist da Visita na Obra', 'Itens de EPI / EPC avaliados como C, NC ou NA. Desmarque "ativo" para tirar do formulário (as visitas antigas não mudam).', 'checklist_itens', '', S.listas.checklist, 'descricao')}
+    <div class="lado-a-lado" style="grid-template-columns:1fr 1fr">
+      ${secao('Assuntos de DDS', 'Aparecem na lista do DDS. O técnico também pode digitar outro.', 'opcoes', 'tema_dds', opcoesDe('tema_dds', false), 'nome')}
+      ${secao('Serviços', 'Opções do campo "Qual o serviço?" da visita.', 'opcoes', 'servico', opcoesDe('servico', false), 'nome')}
+    </div>
+    ${secao('Obras em andamento', 'Sugestões no campo "Obra / local".', 'opcoes', 'obra', opcoesDe('obra', false), 'nome')}`;
+}
+async function salvarItem(tabela, id, campos) {
+  try { await api.salvarLinha(tabela, { id, ...campos }); await carregarListas(); desenharListas(); toast('Salvo.', 1500, 'ok'); }
+  catch (e) { toast(traduzErro(e), 6000, 'erro'); }
+}
+async function novoItem(ev, tabela, tipo, campo) {
+  ev.preventDefault();
+  const f = ev.target;
+  const valor = f.valor.value.trim();
+  if (!valor) return;
+  const lista = tabela === 'checklist_itens' ? S.listas.checklist : opcoesDe(tipo, false);
+  const linha = { [campo]: valor, ordem: Math.max(0, ...lista.map((x) => x.ordem || 0)) + 1 };
+  if (tabela === 'opcoes') linha.tipo = tipo;
+  if (tabela === 'checklist_itens') linha.tipo = f.tipo.value;
+  try { await api.salvarLinha(tabela, linha); await carregarListas(); desenharListas(); }
+  catch (e) { toast(/duplicate|unique/i.test(e.message) ? 'Esse item já existe.' : traduzErro(e), 6000, 'erro'); }
+}
+
+// ============================================================
+//  PARTIDA
+// ============================================================
+async function partida() {
+  if (!DEMO && !window.supabase) {
+    app().innerHTML = `<div class="inicio"><img class="logo" src="logo.png" alt="Construtora Axial"><div class="alerta vermelho" style="max-width:420px">${ico('ocorrencia')}<span>Não consegui abrir o app (sem internet?). Confira a conexão e toque em <b>Tentar de novo</b>.</span></div><button class="btn" onclick="location.reload()">Tentar de novo</button></div>`;
+    return;
+  }
+  if (!DEMO) SB.iniciar(); else Demo.iniciar();
+  try {
+    S.perfil = await api.perfilAtual();
+    if (S.perfil && !S.perfil.ativo) { await api.sair(); S.perfil = null; }
+    if (S.perfil) await carregarListas();
+  } catch (e) { S.perfil = null; toast(traduzErro(e), 6000, 'erro'); }
+
+  if (!DEMO) {
+    SB.db.auth.onAuthStateChange((evento) => {
+      if (evento === 'PASSWORD_RECOVERY') pedirNovaSenha();
+      if (evento === 'SIGNED_OUT' && S.perfil) { S.perfil = null; desenhar({ tela: 'inicio', params: {} }); }
+    });
+  }
+  const inicial = { tela: telaInicial(), params: {} };
+  history.replaceState(inicial, '');
+  pilha = [inicial];
+  desenhar(inicial);
+}
+function pedirNovaSenha() {
+  $('#camada').innerHTML = `<div class="fundo-modal"><div class="modal"><h2>Criar nova senha</h2>
+    <form onsubmit="event.preventDefault();salvarNovaSenha()"><div class="campo"><label>Nova senha (mín. 8)</label><input type="password" id="ns" minlength="8" required></div>
+    <button class="btn bloco">Salvar senha</button></form></div></div>`;
+}
+async function salvarNovaSenha() {
+  try { await api.novaSenha($('#ns').value); fecharModal(); toast('Senha alterada.', 3000, 'ok'); }
+  catch (e) { toast(traduzErro(e), 6000, 'erro'); }
+}
+
+// Service worker: instala no celular e avisa quando há versão nova.
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  navigator.serviceWorker.register('sw.js').then((reg) => {
+    const avisar = (w) => toast('Nova versão do app disponível.', 0, '', { texto: 'Atualizar', acao: () => w.postMessage('SKIP_WAITING') });
+    if (reg.waiting && navigator.serviceWorker.controller) avisar(reg.waiting);
+    reg.addEventListener('updatefound', () => {
+      const w = reg.installing;
+      w?.addEventListener('statechange', () => { if (w.state === 'installed' && navigator.serviceWorker.controller) avisar(w); });
+    });
+  });
+  let recarregou = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (!recarregou) { recarregou = true; location.reload(); } });
+}
+
+partida();
+</script>
+</body>
+</html>
