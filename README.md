@@ -1,5 +1,7 @@
 # Vistoria QSMS — Construtora Axial
 
+**No ar:** https://qsms-axial.frentedigital.app.br (GitHub Pages + DNS no Cloudflare, registro CNAME `qsms-axial` → `arquivosaxial-hue.github.io`, nuvem cinza).
+
 App (PWA) para vistoria simplificada de obras: **DDS**, **Visita na Obra** e
 **Incidente / Acidente**. Funciona no celular, que pode instalar o app na tela
 inicial, e no computador.
