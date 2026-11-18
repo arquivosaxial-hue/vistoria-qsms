@@ -272,7 +272,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--azul);bo
 //  Ao publicar mudança: suba APP_VERSION aqui E a VERSION no sw.js
 //  (o GitHub confere — workflow "Conferir versão").
 // ============================================================
-const APP_VERSION = 'v1.0.0';
+const APP_VERSION = 'v1.1.0';
 const SUPABASE_URL = 'https://kypmzytfuyohkpjyjhqs.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_09CCO3e6hkpWPJ4NbFAr5g_SwofYhiG';   // pública (NUNCA a sb_secret_)
 const DOMINIO_USUARIO = 'vistoria-qsms.app';               // igual ao da Edge Function
@@ -596,6 +596,7 @@ const Demo = {
     if (c.acao === 'criar') {
       const email = paraLogin(c.login);
       if (!c.nome) throw new Error('Informe o nome.');
+      if (c.enviar_email) c.senha = 'demo1234';   // demo não manda e-mail
       if (String(c.senha || '').length < 8) throw new Error('A senha precisa ter pelo menos 8 caracteres.');
       if (this.d.usuarios.some((x) => x.email === email)) throw new Error('Já existe um usuário com este login.');
       this.d.usuarios.push({ id: novoId(), nome: c.nome, email, senha: c.senha, papel: c.papel === 'admin' ? 'admin' : 'tecnico', funcao: c.funcao || '', registro: c.registro || '', ativo: true });
@@ -604,7 +605,9 @@ const Demo = {
     else if (c.acao === 'senha') { if (String(c.senha || '').length < 8) throw new Error('A senha precisa ter pelo menos 8 caracteres.'); u.senha = c.senha; }
     else if (c.acao === 'bloquear') { if (u.id === this.d.sessao) throw new Error('Você não pode bloquear a si mesma.'); u.ativo = false; }
     else if (c.acao === 'reativar') u.ativo = true;
+    else if (c.acao === 'boas_vindas') throw new Error('No modo demonstração não há envio de e-mail.');
     this.gravar();
+    if (c.acao === 'criar' && c.enviar_email) return { ok: true, email_enviado: false, email_erro: 'Modo demonstração: nenhum e-mail é enviado (senha: demo1234).' };
     return { ok: true };
   },
   async salvarLinha(tabela, linha) {
@@ -700,7 +703,7 @@ function telaLogin({ modo = 'tecnico' }) {
     <img class="logo" src="logo.png" alt="Construtora Axial" style="width:min(220px,60vw)">
     <form class="card" style="width:100%;max-width:420px;margin-top:14px" onsubmit="fazerLogin(event,'${modo}')">
       <h2>${ico(adm ? 'escudo' : 'capacete')} Entrar como ${adm ? 'Administrador' : 'Usuário'}</h2>
-      <div class="campo"><label for="l-login">${adm ? 'E-mail ou usuário' : 'Usuário'}</label>
+      <div class="campo"><label for="l-login">${adm ? 'E-mail ou usuário' : 'Usuário ou e-mail'}</label>
         <input type="text" id="l-login" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="${adm ? 'seu e-mail' : 'ex.: joao.silva'}" required></div>
       <div class="campo"><label for="l-senha">Senha</label>
         <input type="password" id="l-senha" autocomplete="current-password" required></div>
@@ -1465,9 +1468,11 @@ function formUsuario(id) {
     <form onsubmit="salvarUsuario(event, ${u ? `'${u.id}'` : 'null'})">
       <div class="campo"><label class="req">Nome completo</label><input type="text" id="u-nome" value="${esc(u?.nome)}" required></div>
       ${u ? `<div class="campo"><label>Login</label><input type="text" value="${esc(loginCurto(u.email))}" disabled></div>`
-          : `<div class="campo"><label class="req">Usuário (login)</label><input type="text" id="u-login" autocapitalize="none" spellcheck="false" placeholder="ex.: joao.silva" required>
-             <p class="dica">Sem espaços. É o que o técnico digita para entrar. Pode ser também um e-mail.</p></div>
-             <div class="campo"><label class="req">Senha inicial</label><input type="text" id="u-senha" minlength="8" required value="${esc(senhaSugerida())}">
+          : `<div class="campo"><label class="req">Usuário ou e-mail (login)</label><input type="text" id="u-login" autocapitalize="none" spellcheck="false" placeholder="ex.: joao.silva ou joao@construtoraaxial.com.br" required oninput="ajustarFormEmail()">
+             <p class="dica">Sem espaços. É o que a pessoa digita para entrar. Com e-mail, ela pode receber o convite para criar a própria senha.</p></div>
+             <div class="campo" id="u-email-c" hidden><label style="display:flex;gap:8px;align-items:flex-start;font-weight:600"><input type="checkbox" id="u-email" checked onchange="ajustarFormEmail()" style="margin-top:3px">
+               <span>Enviar e-mail de boas-vindas<br><small style="font-weight:400;color:var(--suave)">Com o botão “Criar minha senha”: a pessoa escolhe a própria senha.</small></span></label></div>
+             <div class="campo" id="u-senha-c"><label class="req">Senha inicial</label><input type="text" id="u-senha" minlength="8" value="${esc(senhaSugerida())}">
              <p class="dica">Mínimo 8 caracteres. Anote e passe para o técnico.</p></div>`}
       <div class="duas">
         <div class="campo"><label>Função</label><input type="text" id="u-funcao" value="${esc(u?.funcao ?? 'Técnico de Segurança do Trabalho')}"></div>
@@ -1481,6 +1486,7 @@ function formUsuario(id) {
     ${u ? `<hr style="border:0;border-top:1px solid var(--borda);margin:18px 0">
       <div class="linha-btns">
         <button class="btn sec peq" onclick="trocarSenhaUsuario('${u.id}')">Redefinir senha</button>
+        ${u.ativo && emailReal(u.email) ? `<button class="btn sec peq" onclick="acaoUsuario('boas_vindas','${u.id}')">Reenviar e-mail de boas-vindas</button>` : ''}
         ${eu ? '' : (u.ativo ? `<button class="btn perigo peq" onclick="acaoUsuario('bloquear','${u.id}')">Bloquear acesso</button>`
                           : `<button class="btn verde peq" onclick="acaoUsuario('reativar','${u.id}')">Reativar acesso</button>`)}
       </div>` : ''}
@@ -1491,16 +1497,29 @@ function senhaSugerida() {
   const p = ['Obra', 'Capacete', 'Seguro', 'Axial', 'Canteiro', 'Prumo'];
   return p[Math.floor(Math.random() * p.length)] + '@' + String(Math.floor(1000 + Math.random() * 9000));
 }
+const emailReal = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e || '').trim()) && !String(e).trim().toLowerCase().endsWith('@' + DOMINIO_USUARIO);
+function ajustarFormEmail() {
+  const temEmail = emailReal($('#u-login').value);
+  $('#u-email-c').hidden = !temEmail;
+  const convite = temEmail && $('#u-email').checked;
+  $('#u-senha-c').hidden = convite;
+}
 async function salvarUsuario(ev, id) {
   ev.preventDefault();
+  const convite = !id && emailReal($('#u-login').value) && $('#u-email').checked;
   const corpo = id
     ? { acao: 'editar', id, nome: $('#u-nome').value.trim(), funcao: $('#u-funcao').value.trim(), registro: $('#u-registro').value.trim(), papel: $('#u-papel').value }
-    : { acao: 'criar', nome: $('#u-nome').value.trim(), login: $('#u-login').value.trim(), senha: $('#u-senha').value, funcao: $('#u-funcao').value.trim(), registro: $('#u-registro').value.trim(), papel: $('#u-papel').value };
+    : { acao: 'criar', nome: $('#u-nome').value.trim(), login: $('#u-login').value.trim(), senha: convite ? '' : $('#u-senha').value, enviar_email: convite,
+        site: location.origin + location.pathname, funcao: $('#u-funcao').value.trim(), registro: $('#u-registro').value.trim(), papel: $('#u-papel').value };
   if (!id && /\s/.test(corpo.login)) { toast('O usuário não pode ter espaços.', 4000, 'erro'); return; }
+  if (!id && !convite && corpo.senha.length < 8) { toast('A senha precisa ter pelo menos 8 caracteres.', 4000, 'erro'); return; }
   try {
-    await api.gerenciar(corpo);
+    const r = await api.gerenciar(corpo);
     fecharModal();
-    toast(id ? 'Usuário atualizado.' : `Usuário criado. Login: ${loginCurto(paraLogin(corpo.login))} · Senha: ${corpo.senha}`, id ? 3000 : 12000, 'ok');
+    if (id) toast('Usuário atualizado.', 3000, 'ok');
+    else if (convite && r.email_enviado) toast(`Usuário criado. E-mail com “Criar minha senha” enviado para ${corpo.login}.`, 9000, 'ok');
+    else if (convite) toast(`Usuário criado, mas o e-mail NÃO foi enviado: ${r.email_erro || 'erro'} Use “Redefinir senha” ou tente reenviar.`, 0, 'erro', { texto: 'OK', acao: () => {} });
+    else toast(`Usuário criado. Login: ${loginCurto(paraLogin(corpo.login))} · Senha: ${corpo.senha}`, 12000, 'ok');
     S.admin.usuarios = await api.usuarios(); desenharUsuarios();
   } catch (e) { toast(traduzErro(e), 6000, 'erro'); }
 }
@@ -1512,10 +1531,12 @@ async function trocarSenhaUsuario(id) {
 }
 async function acaoUsuario(acao, id) {
   if (acao === 'bloquear' && !confirm('Bloquear este usuário? Ele não consegue mais entrar. Os registros dele continuam guardados.')) return;
+  const u = S.admin.usuarios.find((x) => x.id === id);
+  if (acao === 'boas_vindas' && !confirm(`Enviar para ${u?.email} um e-mail com o botão “Criar minha senha”?`)) return;
   try {
-    await api.gerenciar({ acao, id });
+    await api.gerenciar({ acao, id, site: location.origin + location.pathname });
     fecharModal();
-    toast(acao === 'bloquear' ? 'Acesso bloqueado.' : 'Acesso reativado.', 3000, 'ok');
+    toast({ bloquear: 'Acesso bloqueado.', reativar: 'Acesso reativado.', boas_vindas: `E-mail enviado para ${u?.email}.` }[acao], 4000, 'ok');
     S.admin.usuarios = await api.usuarios(); desenharUsuarios();
   } catch (e) { toast(traduzErro(e), 6000, 'erro'); }
 }
@@ -1567,31 +1588,42 @@ async function partida() {
     app().innerHTML = `<div class="inicio"><img class="logo" src="logo.png" alt="Construtora Axial"><div class="alerta vermelho" style="max-width:420px">${ico('ocorrencia')}<span>Não consegui abrir o app (sem internet?). Confira a conexão e toque em <b>Tentar de novo</b>.</span></div><button class="btn" onclick="location.reload()">Tentar de novo</button></div>`;
     return;
   }
-  if (!DEMO) SB.iniciar(); else Demo.iniciar();
+  // Chegou pelo link "Criar minha senha" / "Esqueci minha senha"?
+  const veioDeLink = /type=(recovery|invite)/.test(location.hash + location.search);
+  let pediuSenha = false;
+  const abrirNovaSenha = () => { if (!pediuSenha) { pediuSenha = true; pedirNovaSenha(); } };
+  if (!DEMO) {
+    SB.iniciar();
+    // registrado ANTES de ler a sessão: o supabase-js lê o link logo na partida
+    SB.db.auth.onAuthStateChange((evento) => {
+      if (evento === 'PASSWORD_RECOVERY') setTimeout(abrirNovaSenha, 0);
+      if (evento === 'SIGNED_OUT' && S.perfil) { S.perfil = null; desenhar({ tela: 'inicio', params: {} }); }
+    });
+  } else Demo.iniciar();
   try {
     S.perfil = await api.perfilAtual();
     if (S.perfil && !S.perfil.ativo) { await api.sair(); S.perfil = null; }
     if (S.perfil) await carregarListas();
   } catch (e) { S.perfil = null; toast(traduzErro(e), 6000, 'erro'); }
 
-  if (!DEMO) {
-    SB.db.auth.onAuthStateChange((evento) => {
-      if (evento === 'PASSWORD_RECOVERY') pedirNovaSenha();
-      if (evento === 'SIGNED_OUT' && S.perfil) { S.perfil = null; desenhar({ tela: 'inicio', params: {} }); }
-    });
-  }
   const inicial = { tela: telaInicial(), params: {} };
-  history.replaceState(inicial, '');
+  history.replaceState(inicial, '', location.pathname);   // limpa o token do endereço
   pilha = [inicial];
   desenhar(inicial);
+  if (veioDeLink && S.perfil) abrirNovaSenha();
 }
 function pedirNovaSenha() {
-  $('#camada').innerHTML = `<div class="fundo-modal"><div class="modal"><h2>Criar nova senha</h2>
+  $('#camada').innerHTML = `<div class="fundo-modal"><div class="modal"><h2>Crie a sua senha</h2><p style="margin:-6px 0 14px;color:var(--suave)">Escolha uma senha com pelo menos 8 caracteres. Ela será usada para entrar no Vistoria QSMS.</p>
     <form onsubmit="event.preventDefault();salvarNovaSenha()"><div class="campo"><label>Nova senha (mín. 8)</label><input type="password" id="ns" minlength="8" required></div>
     <button class="btn bloco">Salvar senha</button></form></div></div>`;
 }
 async function salvarNovaSenha() {
-  try { await api.novaSenha($('#ns').value); fecharModal(); toast('Senha alterada.', 3000, 'ok'); }
+  try {
+    await api.novaSenha($('#ns').value);
+    fecharModal();
+    toast('Senha criada! Use-a nas próximas entradas.', 5000, 'ok');
+    if (!S.perfil) { S.perfil = await api.perfilAtual(); if (S.perfil) { await carregarListas(); ir(telaInicial(), {}, true); } }
+  }
   catch (e) { toast(traduzErro(e), 6000, 'erro'); }
 }
 

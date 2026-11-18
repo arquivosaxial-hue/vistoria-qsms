@@ -57,10 +57,20 @@ roda em **modo demonstração**: os dados ficam só no aparelho. Os logins são
 5. Opcional: para usar um domínio próprio, adicione um arquivo `CNAME` e
    inclua esse arquivo no `cp` do workflow *Publicar site*.
 
-### 3. Primeiro acesso
+### 3. E-mail de boas-vindas (Resend)
+1. Em resend.com, verifique o domínio `qsms-axial.frentedigital.app.br`. Os
+   registros DNS que o Resend mostrar vão no Cloudflare, todos com nuvem cinza.
+2. Crie uma API Key com permissão *Sending access*.
+3. No Supabase, vá em **Edge Functions → Secrets** e crie `RESEND_API_KEY`.
+   Os secrets `EMAIL_REMETENTE` e `EMAIL_RESPOSTA` são opcionais.
+
+### 4. Primeiro acesso
 A engenheira entra como **Administrador**, abre **Usuários → Novo usuário** e
-cadastra os técnicos. O login pode ser um nome simples, como `joao.silva`, sem
-e-mail. Ela anota a senha inicial e passa para cada técnico.
+cadastra os técnicos.
+- **Com e-mail:** a pessoa recebe um e-mail com o link **"Criar minha senha"**.
+  A admin pode reenviar o e-mail na tela de edição do usuário.
+- **Sem e-mail:** o login é um nome simples, como `joao.silva`. A admin define a
+  senha inicial e passa para o técnico.
 
 ## Regras da casa
 
