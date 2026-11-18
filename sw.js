@@ -6,7 +6,7 @@
 // IMPORTANTE: ao publicar uma versão nova, troque a VERSION abaixo E a
 // APP_VERSION no index.html pelo MESMO número. O GitHub confere
 // (workflow "Conferir versão") e fica vermelho se estiverem diferentes.
-const VERSION = 'v1.1.0';
+const VERSION = 'v1.1.1';
 const CACHE = 'vistoria-qsms-' + VERSION;
 
 const CASCO = [
@@ -41,6 +41,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(req.url);
   if (url.hostname.endsWith('supabase.co') || url.hostname.endsWith('supabase.in')) return;
   if (url.hostname.endsWith('openstreetmap.org')) return;   // endereço pelo GPS: sempre rede
+  if (url.searchParams.has('verificar')) return;            // botão da versão: sempre rede, sem guardar
 
   // Abrir o app: rede primeiro (sempre a versão mais nova); sem internet, o cache.
   // cache:'no-cache' faz o navegador conferir com o servidor em vez de usar a

@@ -75,6 +75,10 @@ a{color:var(--azul-escuro)}
 .escolha b{display:block;font-size:19px;color:var(--navy)}
 .escolha small{color:var(--suave);font-size:14px}
 .versao{color:var(--suave);font-size:12px;margin-top:28px;text-align:center}
+.versao button{background:none;border:0;padding:6px 4px;margin:-6px -4px;font:inherit;color:inherit;cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px;display:inline-flex;align-items:center;gap:4px}
+.versao button:hover,.versao button:focus-visible{color:var(--azul,#1B7BB8)}
+.versao button:disabled{cursor:wait;text-decoration:none}
+.versao .ico{width:13px;height:13px}
 
 /* --------- cartões e formulários */
 .card{background:var(--card);border-radius:var(--raio);box-shadow:var(--sombra);padding:18px;margin-bottom:14px}
@@ -272,7 +276,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--azul);bo
 //  Ao publicar mudança: suba APP_VERSION aqui E a VERSION no sw.js
 //  (o GitHub confere — workflow "Conferir versão").
 // ============================================================
-const APP_VERSION = 'v1.1.0';
+const APP_VERSION = 'v1.1.1';
 const SUPABASE_URL = 'https://kypmzytfuyohkpjyjhqs.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_09CCO3e6hkpWPJ4NbFAr5g_SwofYhiG';   // pública (NUNCA a sb_secret_)
 const DOMINIO_USUARIO = 'vistoria-qsms.app';               // igual ao da Edge Function
@@ -693,7 +697,7 @@ function telaInicio() {
         <span><b>Administrador</b><small>Engenharia de segurança — painel, relatórios e usuários</small></span>
       </button>
     </div>
-    <p class="versao">Construtora Axial · ${APP_VERSION}</p>
+    <p class="versao">Construtora Axial · ${botaoVersao()}</p>
   </div>`;
 }
 
@@ -794,7 +798,7 @@ function telaTecnico() {
     ${env.length ? `<section class="enviados"><h3>Enviados por este aparelho</h3>
       ${env.map((e) => `<div class="enviado">${ico('ok')}<span><b>${esc(TIPOS[e.tipo]?.nome || e.tipo)} nº ${esc(e.numero)}</b> · ${esc(e.obra)}</span></div>`).join('')}
     </section>` : ''}
-    <p class="versao">${APP_VERSION}</p>
+    <p class="versao">${botaoVersao()}</p>
   </main>`;
 }
 
@@ -1627,9 +1631,52 @@ async function salvarNovaSenha() {
   catch (e) { toast(traduzErro(e), 6000, 'erro'); }
 }
 
+// Toque na versão (rodapé): procura versão nova no servidor e atualiza na hora.
+let SW_REG = null;
+function botaoVersao() {
+  return `<button type="button" onclick="verificarAtualizacao(this)" title="Verificar atualização" aria-label="Versão ${APP_VERSION}. Toque para verificar atualização">${ico('atualizar')}${APP_VERSION}</button>`;
+}
+async function verificarAtualizacao(btn) {
+  if (btn.disabled) return;
+  if (!navigator.onLine) { toast('Sem internet: não consegui verificar se há versão nova.', 5000, 'erro'); return; }
+  const original = btn.innerHTML;
+  btn.disabled = true; btn.textContent = 'Verificando…';
+  const restaurar = () => { btn.disabled = false; btn.innerHTML = original; };
+  try {
+    const html = await fetch(`${location.pathname}?verificar=${Date.now()}`, { cache: 'no-store' }).then((r) => { if (!r.ok) throw new Error(); return r.text(); });
+    const noAr = html.match(/const APP_VERSION = '([^']+)'/)?.[1];
+    if (!noAr) throw new Error();
+    if (noAr === APP_VERSION) { toast(`Você já está na versão mais recente (${APP_VERSION}).`, 3500, 'ok'); restaurar(); return; }
+    if (S.form?.sujo && !confirm(`Há uma versão nova (${noAr}). Atualizar agora? O que foi preenchido e não enviado será perdido.`)) { restaurar(); return; }
+    btn.textContent = `Atualizando para ${noAr}…`;
+    if (S.form) S.form.sujo = false;
+    await ativarVersaoNova();
+  } catch {
+    toast('Não consegui verificar agora. Tente de novo em instantes.', 5000, 'erro');
+    restaurar();
+  }
+}
+// Baixa o service worker novo e troca para ele; se não der em 10 s, recarrega a página.
+async function ativarVersaoNova() {
+  const recarregar = () => location.reload();
+  const reg = SW_REG;
+  if (!reg) return recarregar();
+  setTimeout(recarregar, 10000);
+  try { await reg.update(); } catch { return recarregar(); }
+  const trocar = (w) => w.postMessage('SKIP_WAITING');   // o 'controllerchange' recarrega a página
+  if (reg.waiting) return trocar(reg.waiting);
+  const w = reg.installing;
+  if (!w) return recarregar();
+  w.addEventListener('statechange', () => {
+    if (w.state === 'installed') trocar(w);
+    if (w.state === 'redundant') recarregar();
+  });
+}
+
 // Service worker: instala no celular e avisa quando há versão nova.
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   navigator.serviceWorker.register('sw.js').then((reg) => {
+    SW_REG = reg;
     const avisar = (w) => toast('Nova versão do app disponível.', 0, '', { texto: 'Atualizar', acao: () => w.postMessage('SKIP_WAITING') });
     if (reg.waiting && navigator.serviceWorker.controller) avisar(reg.waiting);
     reg.addEventListener('updatefound', () => {
